@@ -114,7 +114,7 @@
                     <tr>
                         <td>{{ $index + 1 }}</td>
                         <td>{{ $deposit->user->name ?? 'N/A' }}</td>
-                        {{-- <td>{{ $deposit->investmentPlan->plan_name ?? 'N/A' }}</td> --}}
+                        <td>{{ $deposit->investmentPlan->plan_name ?? 'N/A' }}</td>
                         <td>${{ number_format($deposit->amount, 2) }}</td>
                         <td>
                             @if ($deposit->deposit_picture)
@@ -155,7 +155,7 @@
                                 </div>
                                 <div class="modal-body">
                                     <p><strong>User:</strong> {{ $deposit->user->name }}</p>
-                                    <p><strong>Plan:</strong> {{ $deposit->investmentPlan->plan_name }}</p>
+                                    <p><strong>Plan:</strong> {{ $deposit->investmentPlan->plan_name ?? 'N/A' }}</p>
                                     <p><strong>Amount:</strong> ${{ $deposit->amount }}</p>
                                     <p><strong>Deposit Address:</strong> {{ $deposit->chain->address ?? 'N/A' }}</p>
                                     <p><strong>Status:</strong> {{ ucfirst($deposit->status) }}</p>
