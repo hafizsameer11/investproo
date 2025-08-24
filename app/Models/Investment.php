@@ -68,4 +68,12 @@ class Investment extends Model
     
     return $this->amount * $dailyProfitRate * $elapsedDays;
   }
+
+  public function getDailyProfitAttribute()
+  {
+    if (!$this->investmentPlan) return 0;
+    
+    $dailyProfitRate = $this->investmentPlan->profit_percentage / 100;
+    return $this->amount * $dailyProfitRate;
+  }
 }

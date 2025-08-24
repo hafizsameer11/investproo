@@ -56,12 +56,34 @@ class DashboardController extends Controller
             $plan = Investment::where('user_id', Auth::id())
                 ->where('status', 'active')
                 ->count();
-            $profit = Deposit::where('user_id', Auth::id())->get();
-            $totalAmount = $profit->sum('amount');
-
-            $daily_profit = round($totalAmount / 30, 2);
-
-            // dd($daily_profit);
+            
+            // Calculate actual daily profit from active investments
+            $activeInvestments = Investment::with('investmentPlan')
+                ->where('user_id', Auth::id())
+                ->where('status', 'active')
+                ->get();
+            
+            $daily_profit = 0;
+            foreach ($activeInvestments as $investment) {
+                if ($investment->investmentPlan) {
+                    $dailyRate = $investment->investmentPlan->profit_percentage / 100;
+                    $daily_profit += $investment->amount * $dailyRate;
+                }
+            }
+            
+            $daily_profit = round($daily_profit, 2);
+            
+            \Log::info('Daily profit calculation:', [
+                'active_investments_count' => $activeInvestments->count(),
+                'daily_profit' => $daily_profit,
+                'investments_details' => $activeInvestments->map(function($inv) {
+                    return [
+                        'amount' => $inv->amount,
+                        'daily_rate' => $inv->investmentPlan ? $inv->investmentPlan->profit_percentage : 0,
+                        'daily_profit' => $inv->investmentPlan ? ($inv->amount * $inv->investmentPlan->profit_percentage / 100) : 0
+                    ];
+                })
+            ]);
             $referral_bonus = $balance->bonus_amount + $balance->referral_amount;
             $withdrawal_amount = $balance->withdrawal_amount;
             return ResponseHelper::success([

@@ -36,6 +36,7 @@ class InvestmentController extends Controller
                     'days_remaining' => $investment->days_remaining,
                     'progress_percentage' => $investment->progress_percentage,
                     'total_profit' => $investment->total_profit,
+                    'daily_profit' => $investment->daily_profit,
                     'daily_profit_rate' => $investment->investmentPlan->profit_percentage ?? 0,
                     'duration_days' => $investment->investmentPlan->duration ?? 0,
                     'created_at' => $investment->created_at,
