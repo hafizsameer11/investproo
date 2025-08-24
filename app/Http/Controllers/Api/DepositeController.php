@@ -28,7 +28,7 @@ class DepositeController extends Controller
             // $wallet = Wallet::where('user_id', $user->id)->first();
             
             // Handle image upload
-            if (isset($data['deposit_picture']) && $data['deposit_picture']->isValid()) {
+            if (isset($data['deposit_picture']) && $data['deposit_picture']) {
                 $img = $data['deposit_picture'];
                 $ext = $img->getClientOriginalExtension();
                 $imageName = time() . '.' . $ext;
