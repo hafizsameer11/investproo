@@ -114,7 +114,7 @@
                     <tr>
                         <td>{{ $index + 1 }}</td>
                         <td>{{ $deposit->user->name ?? 'N/A' }}</td>
-                        <td>{{ $deposit->investmentPlan->plan_name ?? 'N/A' }}</td>
+                        {{-- <td>{{ $deposit->investmentPlan->plan_name ?? 'N/A' }}</td> --}}
                         <td>${{ number_format($deposit->amount, 2) }}</td>
                         <td>
                             @if ($deposit->deposit_picture)
