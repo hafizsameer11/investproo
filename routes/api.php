@@ -1,0 +1,64 @@
+<?php
+
+use App\Http\Controllers\Api\ChainController;
+use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\DepositeController;
+use App\Http\Controllers\Api\InvestmentController;
+use App\Http\Controllers\Api\InvestmentPlanController;
+use App\Http\Controllers\Api\MiningController;
+use App\Http\Controllers\Api\TransactionController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\WithdrawalController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+
+
+
+
+
+// Route::get('/user', function (Request $request) {
+//     return $request->user();
+// })->middleware('auth:sanctum');
+
+Route::post('/register', [UserController::class, 'register']);
+Route::post('/login', [UserController::class, 'login']);
+Route::post('/logout', [UserController::class, 'logout'])->middleware('auth:sanctum');
+Route::get('/allUser', [UserController::class, 'allUser'])->middleware('auth:sanctum');
+Route::post('/update', [UserController::class, 'update'])->middleware('auth:sanctum');
+Route::post('/kyc/{user_id}', [UserController::class, 'kyc'])->middleware('auth:sanctum');
+Route::get('/profile', [UserController::class, 'profile'])->middleware('auth:sanctum');
+Route::apiResource('/investment_plan', InvestmentPlanController::class)->middleware('auth:sanctum');
+// deposit
+Route::post('/deposits/{plan_id}', [DepositeController::class, 'store'])->middleware('auth:sanctum');
+// deposite approval
+Route::post('/approval-deposits/{user_id}/{depositId}', [DepositeController::class, 'update'])->middleware('auth:sanctum');
+
+// withdrawal
+Route::post('/withdrawal', [WithdrawalController::class, 'store'])->middleware('auth:sanctum');
+// withdrawal approval
+Route::put('/approval-withdrawal/{user_id}/{withdrawalId}', [WithdrawalController::class, 'update'])->middleware('auth:sanctum');
+
+Route::get('/dashboard', [DashboardController::class, 'dashboard'])->middleware('auth:sanctum');
+Route::get('/about', [DashboardController::class, 'about'])->middleware('auth:sanctum');
+Route::post('/contact', [ContactController::class, 'contact'])->middleware('auth:sanctum');
+
+Route::get('/single-transaction', [TransactionController::class, 'userTransactions'])->middleware('auth:sanctum');
+Route::get('/all-transaction', [TransactionController::class, 'allTransactions'])->middleware('auth:sanctum');
+
+Route::get('/investment', [InvestmentController::class, 'investment'])->middleware('auth:sanctum');
+
+// User deposit and withdrawal history
+Route::get('/user-deposits', [DepositeController::class, 'userDeposits'])->middleware('auth:sanctum');
+Route::get('/user-withdrawals', [WithdrawalController::class, 'userWithdrawals'])->middleware('auth:sanctum');
+
+// Chain/Wallet addresses
+Route::get('/chains', [ChainController::class, 'index'])->middleware('auth:sanctum');
+Route::get('/chains/{id}', [ChainController::class, 'show'])->middleware('auth:sanctum');
+
+// Mining routes
+Route::post('/mining/start', [MiningController::class, 'start'])->middleware('auth:sanctum');
+Route::get('/mining/status', [MiningController::class, 'status'])->middleware('auth:sanctum');
+Route::post('/mining/stop', [MiningController::class, 'stop'])->middleware('auth:sanctum');
+Route::post('/mining/claim-rewards', [MiningController::class, 'claimRewards'])->middleware('auth:sanctum');
