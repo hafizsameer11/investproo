@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class DepositeController extends Controller
@@ -70,7 +71,7 @@ class DepositeController extends Controller
             $wallet = Wallet::where('user_id', $user->id)->first();
             $plan = \App\Models\InvestmentPlan::find($planId);
             
-            \Log::info('Plan activation request:', [
+            Log::info('Plan activation request:', [
                 'user_id' => $user->id,
                 'plan_id' => $planId,
                 'amount' => $data['amount'],
