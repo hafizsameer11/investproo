@@ -13,11 +13,16 @@ class InvestmentController extends Controller
     public function investment()
     {
         try {
+            $userId = Auth::id();
+            \Log::info('Fetching investments for user ID: ' . $userId);
+            
             $investments = Investment::with(['investmentPlan', 'user'])
-                ->where('user_id', Auth::id())
+                ->where('user_id', $userId)
                 ->where('status', 'active')
                 ->orderBy('created_at', 'desc')
                 ->get();
+
+            \Log::info('Found ' . $investments->count() . ' active investments for user ' . $userId);
 
             // Transform the data to include calculated fields
             $transformedInvestments = $investments->map(function ($investment) {

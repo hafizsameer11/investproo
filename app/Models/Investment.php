@@ -44,6 +44,16 @@ class Investment extends Model
     if (!$this->start_date || !$this->end_date) return 0;
     
     $totalDays = $this->start_date->diffInDays($this->end_date);
+    
+    // Prevent division by zero
+    if ($totalDays <= 0) {
+      // If start and end date are the same or invalid, return 100% if past end date, 0% if not
+      if (now()->isAfter($this->end_date)) {
+        return 100;
+      }
+      return 0;
+    }
+    
     $elapsedDays = $this->start_date->diffInDays(now());
     
     return min(100, max(0, ($elapsedDays / $totalDays) * 100));
@@ -51,10 +61,10 @@ class Investment extends Model
 
   public function getTotalProfitAttribute()
   {
-    if (!$this->investmentPlan) return 0;
+    if (!$this->investmentPlan || !$this->start_date) return 0;
     
     $dailyProfitRate = $this->investmentPlan->profit_percentage / 100;
-    $elapsedDays = $this->start_date ? $this->start_date->diffInDays(now()) : 0;
+    $elapsedDays = max(0, $this->start_date->diffInDays(now()));
     
     return $this->amount * $dailyProfitRate * $elapsedDays;
   }
