@@ -70,12 +70,26 @@ class DepositeController extends Controller
             $wallet = Wallet::where('user_id', $user->id)->first();
             $plan = \App\Models\InvestmentPlan::find($planId);
             
+            \Log::info('Plan activation request:', [
+                'user_id' => $user->id,
+                'plan_id' => $planId,
+                'amount' => $data['amount'],
+                'wallet_data' => [
+                    'deposit_amount' => $wallet->deposit_amount ?? 0,
+                    'withdrawal_amount' => $wallet->withdrawal_amount ?? 0,
+                    'profit_amount' => $wallet->profit_amount ?? 0,
+                    'bonus_amount' => $wallet->bonus_amount ?? 0,
+                    'referral_amount' => $wallet->referral_amount ?? 0,
+                ]
+            ]);
+            
             if (!$plan) {
                 return ResponseHelper::error('Investment plan not found', 404);
             }
             
-            // Calculate total available balance
-            $totalBalance = ($wallet->withdrawal_amount ?? 0) + 
+            // Calculate total available balance (including deposit amount)
+            $totalBalance = ($wallet->deposit_amount ?? 0) + 
+                           ($wallet->withdrawal_amount ?? 0) + 
                            ($wallet->profit_amount ?? 0) + 
                            ($wallet->bonus_amount ?? 0) + 
                            ($wallet->referral_amount ?? 0);
@@ -94,10 +108,31 @@ class DepositeController extends Controller
                 return ResponseHelper::error("Maximum amount for this plan is $" . $plan->max_amount, 400);
             }
             
-            // Deduct amount from wallet
+            // Deduct amount from wallet (prioritize deposit_amount first)
             $deductedAmount = min($data['amount'], $totalBalance);
+            $remainingAmount = $deductedAmount;
+            
+            // Calculate new wallet values
+            $newDepositAmount = max(0, ($wallet->deposit_amount ?? 0) - $remainingAmount);
+            $remainingAmount = max(0, $remainingAmount - ($wallet->deposit_amount ?? 0));
+            
+            $newWithdrawalAmount = max(0, ($wallet->withdrawal_amount ?? 0) - $remainingAmount);
+            $remainingAmount = max(0, $remainingAmount - ($wallet->withdrawal_amount ?? 0));
+            
+            $newProfitAmount = max(0, ($wallet->profit_amount ?? 0) - $remainingAmount);
+            $remainingAmount = max(0, $remainingAmount - ($wallet->profit_amount ?? 0));
+            
+            $newBonusAmount = max(0, ($wallet->bonus_amount ?? 0) - $remainingAmount);
+            $remainingAmount = max(0, $remainingAmount - ($wallet->bonus_amount ?? 0));
+            
+            $newReferralAmount = max(0, ($wallet->referral_amount ?? 0) - $remainingAmount);
+            
             Wallet::where('user_id', $user->id)->update([
-                'withdrawal_amount' => max(0, ($wallet->withdrawal_amount ?? 0) - $deductedAmount)
+                'deposit_amount' => $newDepositAmount,
+                'withdrawal_amount' => $newWithdrawalAmount,
+                'profit_amount' => $newProfitAmount,
+                'bonus_amount' => $newBonusAmount,
+                'referral_amount' => $newReferralAmount,
             ]);
             
             // Create investment
