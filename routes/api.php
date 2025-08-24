@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\WithdrawalController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 
 
 
@@ -69,6 +70,15 @@ Route::put('/approval-withdrawal/{user_id}/{withdrawalId}', [WithdrawalControlle
 
 Route::get('/dashboard', [DashboardController::class, 'dashboard'])->middleware('auth:sanctum');
 Route::get('/about', [DashboardController::class, 'about'])->middleware('auth:sanctum');
+
+// Test route to check current user
+Route::get('/test-user', function () {
+    return response()->json([
+        'user_id' => Auth::id(),
+        'user' => Auth::user(),
+        'authenticated' => Auth::check()
+    ]);
+})->middleware('auth:sanctum');
 Route::post('/contact', [ContactController::class, 'contact'])->middleware('auth:sanctum');
 
 Route::get('/single-transaction', [TransactionController::class, 'userTransactions'])->middleware('auth:sanctum');
