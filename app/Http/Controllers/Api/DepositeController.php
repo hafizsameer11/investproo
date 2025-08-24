@@ -18,13 +18,50 @@ use Illuminate\Support\Facades\Storage;
 
 class DepositeController extends Controller
 {
-    public function store(DepositRequest $request, string $planId)
+    public function store(DepositRequest $request)
     {
         try
         {
             $data = $request->validated();
             
-            // Check if user has enough balance for the plan
+            $user = Auth::user();
+            $wallet = Wallet::where('user_id', $user->id)->first();
+            
+            // Handle image upload
+            if (isset($data['deposit_picture']) && $data['deposit_picture']->isValid()) {
+                $img = $data['deposit_picture'];
+                $ext = $img->getClientOriginalExtension();
+                $imageName = time() . '.' . $ext;
+                $img->move(public_path('/deposits'), $imageName);
+                $data['deposit_picture'] = 'deposits/' . $imageName;
+            }
+            
+            $data['user_id'] = Auth::id();
+            $data['deposit_date'] = Carbon::now();
+            $data['status'] = 'pending'; // Deposit needs approval
+            $chain_id = $data['chain_id'] ?? null;
+            $chain_details = $chain_id ? Chain::where('id', $chain_id)->get() : null;
+            
+            $deposit = Deposit::create($data);
+            $response = [
+                'deposit_detail' => $deposit,
+                'chain_detail' => $chain_details,
+                'amount' => $data['amount']
+            ];
+            return ResponseHelper::success($response, 'Deposit request submitted successfully. It will be reviewed and added to your wallet.');
+        } catch (Exception $ex) {
+            return ResponseHelper::error('Deposit failed: ' . $ex->getMessage());
+        }
+    }
+
+    public function activatePlan(Request $request, string $planId)
+    {
+        try
+        {
+            $data = $request->validate([
+                'amount' => 'required|numeric|min:1',
+            ]);
+            
             $user = Auth::user();
             $wallet = Wallet::where('user_id', $user->id)->first();
             $plan = \App\Models\InvestmentPlan::find($planId);
@@ -43,30 +80,51 @@ class DepositeController extends Controller
                 return ResponseHelper::error('Insufficient balance. Please deposit first.', 400);
             }
             
-            if (isset($data['deposit_picture']) && $data['deposit_picture']->isValid()) {
-                $img = $data['deposit_picture'];
-                $ext = $img->getClientOriginalExtension();
-                $imageName = time() . '.' . $ext;
-                $img->move(public_path('/deposits'), $imageName);
-                $data['deposit_picture'] = 'deposits/' . $imageName;
+            // Check if plan minimum amount is met
+            if ($data['amount'] < $plan->min_amount) {
+                return ResponseHelper::error("Minimum amount for this plan is $" . $plan->min_amount, 400);
             }
             
-            $data['user_id'] = Auth::id();
-            $data['deposit_date'] = Carbon::now();
-            $data['investment_plan_id'] = $planId;
-            $chain_id = $data['chain_id'] ?? null;
-            $chain_details = $chain_id ? Chain::where('id', $chain_id)->get() : null;
+            // Check if plan maximum amount is not exceeded
+            if ($data['amount'] > $plan->max_amount) {
+                return ResponseHelper::error("Maximum amount for this plan is $" . $plan->max_amount, 400);
+            }
             
-            $deposit = Deposit::create($data);
+            // Deduct amount from wallet
+            $deductedAmount = min($data['amount'], $totalBalance);
+            Wallet::where('user_id', $user->id)->update([
+                'withdrawal_amount' => max(0, ($wallet->withdrawal_amount ?? 0) - $deductedAmount)
+            ]);
+            
+            // Create investment
+            $investment = Investment::create([
+                'user_id' => $user->id,
+                'investment_plan_id' => $planId,
+                'amount' => $deductedAmount,
+                'start_date' => Carbon::now(),
+                'end_date' => Carbon::now()->addDays($plan->duration_days),
+                'status' => 'active'
+            ]);
+            
+            // Create transaction record
+            Transaction::create([
+                'user_id' => $user->id,
+                'investment_id' => $investment->id,
+                'type' => 'investment',
+                'amount' => $deductedAmount,
+                'status' => 'completed'
+            ]);
+            
             $response = [
-                'deposit_detail' => $deposit,
-                'chain_detail' => $chain_details,
-                'available_balance' => $totalBalance,
-                'required_amount' => $data['amount']
+                'investment' => $investment,
+                'plan' => $plan,
+                'amount_invested' => $deductedAmount,
+                'remaining_balance' => $totalBalance - $deductedAmount
             ];
-            return ResponseHelper::success($response, 'Deposit request submitted successfully');
+            
+            return ResponseHelper::success($response, 'Plan activated successfully!');
         } catch (Exception $ex) {
-            return ResponseHelper::error('Deposit failed: ' . $ex->getMessage());
+            return ResponseHelper::error('Plan activation failed: ' . $ex->getMessage());
         }
     }
 

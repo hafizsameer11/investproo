@@ -56,8 +56,9 @@ Route::post('/update', [UserController::class, 'update'])->middleware('auth:sanc
 Route::post('/kyc/{user_id}', [UserController::class, 'kyc'])->middleware('auth:sanctum');
 Route::get('/profile', [UserController::class, 'profile'])->middleware('auth:sanctum');
 Route::apiResource('/investment_plan', InvestmentPlanController::class)->middleware('auth:sanctum');
-// deposit
-Route::post('/deposits/{plan_id}', [DepositeController::class, 'store'])->middleware('auth:sanctum');
+// Deposit routes
+Route::post('/deposits', [DepositeController::class, 'store'])->middleware('auth:sanctum'); // Just deposit money
+Route::post('/activate-plan/{plan_id}', [DepositeController::class, 'activatePlan'])->middleware('auth:sanctum'); // Activate plan with existing balance
 // deposite approval
 Route::post('/approval-deposits/{user_id}/{depositId}', [DepositeController::class, 'update'])->middleware('auth:sanctum');
 
