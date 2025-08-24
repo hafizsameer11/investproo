@@ -42,6 +42,7 @@ class DepositeController extends Controller
             $data['user_id'] = Auth::id();
             $data['deposit_date'] = Carbon::now();
             $data['status'] = 'pending'; // Deposit needs approval
+            $data['investment_plan_id'] = null; // No plan for deposit-only flow
             $chain_id = $data['chain_id'] ?? null;
             $chain_details = $chain_id ? Chain::where('id', $chain_id)->get() : null;
             
