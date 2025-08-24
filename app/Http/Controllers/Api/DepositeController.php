@@ -144,13 +144,13 @@ class DepositeController extends Controller
     ]);
 
     // Create investment for the user
-    Investment::create([
-        'user_id' => $deposit->user_id,
-        'investment_plan_id' => $deposit->investment_plan_id,
-        'start_date' => Carbon::now(),
-        'end_date' => Carbon::now()->addMonth(),
-        'status' => 'active'
-    ]);
+    // Investment::create([
+    //     'user_id' => $deposit->user_id,
+    //     'investment_plan_id' => $deposit->investment_plan_id,
+    //     'start_date' => Carbon::now(),
+    //     'end_date' => Carbon::now()->addMonth(),
+    //     'status' => 'active'
+    // ]);
     Transaction::create([
         'user_id'=> $deposit->user_id,
         'deposit_id'=> $deposit->id
