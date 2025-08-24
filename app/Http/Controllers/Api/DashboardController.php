@@ -21,7 +21,10 @@ class DashboardController extends Controller
     {
         try {
             $balance = Wallet::where('user_id', Auth::id())->first();
-            $total_balance = $balance->withdrawal_amount + $balance->profit_amount + $balance->bonus_amount;
+            
+            // Calculate total balance including deposit amount
+            $total_balance = $balance->deposit_amount + $balance->profit_amount + $balance->bonus_amount + $balance->referral_amount;
+            
             $plan = Investment::where('user_id', Auth::id())
                 ->where('status', 'active')
                 ->count();
@@ -31,16 +34,14 @@ class DashboardController extends Controller
             $daily_profit = round($totalAmount / 30, 2);
 
             // dd($daily_profit);
-            $referral_bonus = $balance->bonus_amount + $balance->per_user_referral;
+            $referral_bonus = $balance->bonus_amount + $balance->referral_amount;
             $withdrawal_amount = $balance->withdrawal_amount;
-            return response()->json([
-                'total balanxe' => $total_balance,
-                'Active Plan ' => $plan,
-                'Daily Profit' => $daily_profit,
-                'Referral Bonus Earned' => $referral_bonus,
-                'Withdrawal Amount' => $withdrawal_amount,
-
-
+            return ResponseHelper::success('Dashboard data retrieved successfully', [
+                'total_balance' => $total_balance,
+                'active_plans' => $plan,
+                'daily_profit' => $daily_profit,
+                'referral_bonus_earned' => $referral_bonus,
+                'withdrawal_amount' => $withdrawal_amount,
             ]);
         } catch (Exception $ex) {
             return ResponseHelper::error('User is not create' . $ex);
