@@ -47,7 +47,7 @@ Route::get('/migrate/rollback', function () {
 
 Route::get('/unath', function () {
     return response()->json(['message' => 'Unauthenticated'], 401);
-})->name('login');
+})->name('login.auth');
 Route::post('/register', [UserController::class, 'register']);
 Route::post('/login', [UserController::class, 'login']);
 Route::post('/logout', [UserController::class, 'logout'])->middleware('auth:sanctum');
