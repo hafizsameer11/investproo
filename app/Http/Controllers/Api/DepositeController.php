@@ -28,12 +28,15 @@ class DepositeController extends Controller
             // $wallet = Wallet::where('user_id', $user->id)->first();
             
             // Handle image upload
-            if (isset($data['deposit_picture']) && $data['deposit_picture']) {
+            if (isset($data['deposit_picture']) && $data['deposit_picture'] && $data['deposit_picture'] instanceof \Illuminate\Http\UploadedFile) {
                 $img = $data['deposit_picture'];
                 $ext = $img->getClientOriginalExtension();
                 $imageName = time() . '.' . $ext;
                 $img->move(public_path('/deposits'), $imageName);
                 $data['deposit_picture'] = 'deposits/' . $imageName;
+            } else {
+                // If no image uploaded, set to null
+                $data['deposit_picture'] = null;
             }
             
             $data['user_id'] = Auth::id();
