@@ -295,9 +295,13 @@ class DepositeController extends Controller
         'deposit_id'=> $deposit->id
     ]);
     Log::info('Deposit status updated for user', ['user_id' => $deposit->user_id, 'deposit_id' => $deposit->id]);
-    Wallet::where('user_id', $deposit->user_id)->update([
-            'deposit_amount' => $deposit->amount,
-        ]);
+  $wallet = Wallet::where('user_id', $deposit->user_id)->first();
+
+if ($wallet) {
+    $wallet->deposit_amount += $deposit->amount;
+    $wallet->save();
+}
+
     return redirect()->route('deposits');
 }
 
