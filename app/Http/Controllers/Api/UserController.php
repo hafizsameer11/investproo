@@ -228,9 +228,22 @@ class UserController extends Controller
     public function profile()
     {
         try {
-            $user = User::where('id', Auth::id())->get();
+            \Log::info('Profile request received', [
+                'auth_id' => Auth::id(),
+                'auth_check' => Auth::check(),
+                'user' => Auth::user()
+            ]);
+            
+            $user = User::find(Auth::id());
+            if (!$user) {
+                \Log::error('User not found for ID: ' . Auth::id());
+                return ResponseHelper::error('User not found');
+            }
+            
+            \Log::info('Profile data returned', ['user_id' => $user->id, 'email' => $user->email]);
             return ResponseHelper::success($user, "Your profile");
         } catch (Exception $ex) {
+            \Log::error('Profile error: ' . $ex->getMessage());
             return ResponseHelper::error('Not fetch the single user datas' . $ex);
         }
     }

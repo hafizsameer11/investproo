@@ -20,12 +20,20 @@ class KycController extends Controller
     public function upload(Request $request)
     {
         try {
+            \Log::info('KYC upload request received', [
+                'auth_id' => Auth::id(),
+                'auth_check' => Auth::check(),
+                'user' => Auth::user(),
+                'request_data' => $request->all()
+            ]);
+            
             $validator = Validator::make($request->all(), [
                 'document_type' => 'required|in:passport,national_id,drivers_license,utility_bill,bank_statement',
                 'document' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240' // 10MB max
             ]);
 
             if ($validator->fails()) {
+                \Log::error('KYC validation failed', ['errors' => $validator->errors()]);
                 return ResponseHelper::error($validator->errors()->first(), 422);
             }
 
