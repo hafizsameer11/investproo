@@ -251,19 +251,44 @@ class UserController extends Controller
     public function update(UserRequest $request)
     {
         try {
+            \Log::info('Profile update request received', [
+                'auth_id' => Auth::id(),
+                'request_data' => $request->all()
+            ]);
+            
             $data = $request->validated();
-            // dd($data);
             $user = User::find(Auth::id());
+            
             if (!$user) {
-                throw new Exception("User not found");
+                \Log::error('User not found for ID: ' . Auth::id());
+                return ResponseHelper::error('User not found');
             }
+            
+            // Check if email is being changed and if it's already taken
+            if (isset($data['email']) && $data['email'] !== $user->email) {
+                $existingUser = User::where('email', $data['email'])->where('id', '!=', $user->id)->first();
+                if ($existingUser) {
+                    return ResponseHelper::error('Email is already taken');
+                }
+            }
+            
+            // Hash password if provided
             if (!empty($data['password'])) {
                 $data['password'] = Hash::make($data['password']);
             }
-            $update_user = User::where('id', Auth::id())->update($data);
-            return ResponseHelper::success($update_user, 'User profile updated successfully');
+            
+            // Update user
+            $user->update($data);
+            
+            \Log::info('Profile updated successfully', [
+                'user_id' => $user->id,
+                'updated_fields' => array_keys($data)
+            ]);
+            
+            return ResponseHelper::success($user, 'User profile updated successfully');
         } catch (Exception $ex) {
-            return ResponseHelper::error('User is not update profile' . $ex);
+            \Log::error('Profile update error: ' . $ex->getMessage());
+            return ResponseHelper::error('Failed to update profile: ' . $ex->getMessage());
         }
     }
 

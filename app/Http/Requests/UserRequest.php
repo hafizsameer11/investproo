@@ -26,7 +26,7 @@ class UserRequest extends FormRequest
         return [
             'name'             => 'nullable|string|max:255',
             'user_name'        => 'nullable|string|max:255',
-            'email'            => 'nullable|email|max:255|unique:users,email',
+            'email'            => 'nullable|email|max:255|unique:users,email,' . auth()->id(),
             'phone'            => 'nullable|string|max:20',
             'role'             => 'nullable|string|in:user,admin', // Adjust values as needed
             'referral_code'    => 'nullable|string|max:255',
