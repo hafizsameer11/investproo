@@ -155,6 +155,15 @@ class DepositeController extends Controller
                 'status' => 'completed'
             ]);
             
+            // Process referral earnings for this investment
+            Log::info('Starting referral earnings processing for investment:', [
+                'user_id' => $user->id,
+                'user_referral_code' => $user->referral_code,
+                'investment_amount' => $deductedAmount,
+                'plan_id' => $plan->id
+            ]);
+            $this->processInvestmentReferralEarnings($user, $deductedAmount, $plan);
+            
             $response = [
                 'investment' => $investment,
                 'plan' => $plan,
@@ -165,6 +174,100 @@ class DepositeController extends Controller
             return ResponseHelper::success($response, 'Plan activated successfully!');
         } catch (Exception $ex) {
             return ResponseHelper::error('Plan activation failed: ' . $ex->getMessage());
+        }
+    }
+
+    /**
+     * Process referral earnings when a user invests
+     */
+    protected function processInvestmentReferralEarnings($investingUser, $investmentAmount, $plan)
+    {
+        try {
+            // Check if user has a referral code
+            if (!$investingUser->referral_code) {
+                Log::info('No referral code found for user, skipping referral earnings');
+                return;
+            }
+
+            // Define referral percentages per level
+            $referralPercentages = [
+                1 => 0.10,  // 10% for level 1
+                2 => 0.07,  // 7% for level 2
+                3 => 0.05,  // 5% for level 3
+                4 => 0.03,  // 3% for level 4
+                5 => 0.02,  // 2% for level 5
+            ];
+
+            $currentReferralCode = $investingUser->referral_code;
+            $level = 1;
+
+            while ($level <= 5 && $currentReferralCode) {
+                // Find the referrer user by their user_code
+                $referrerUser = \App\Models\User::where('user_code', $currentReferralCode)->first();
+
+                if (!$referrerUser) {
+                    Log::info('Referrer not found for code: ' . $currentReferralCode . ' at level: ' . $level);
+                    break; // Stop if no referrer found
+                }
+
+                Log::info('Processing referral for level ' . $level . ':', [
+                    'referrer_user_id' => $referrerUser->id,
+                    'referrer_user_code' => $referrerUser->user_code,
+                    'investment_amount' => $investmentAmount,
+                    'percentage' => $referralPercentages[$level] * 100 . '%'
+                ]);
+
+                // Calculate referral bonus for this level
+                $referralBonus = $investmentAmount * $referralPercentages[$level];
+
+                // Find or create referral record for this referrer
+                $referralRecord = \App\Models\Referrals::firstOrCreate(
+                    ['user_id' => $referrerUser->id],
+                    [
+                        'referral_code' => $referrerUser->user_code,
+                        'referral_bonus_amount' => 0,
+                        'total_referrals' => 0
+                    ]
+                );
+
+                // Update referral bonus amount
+                $referralRecord->referral_bonus_amount += $referralBonus;
+                $referralRecord->save();
+
+                // Update referrer's wallet
+                $referrerWallet = \App\Models\Wallet::where('user_id', $referrerUser->id)->first();
+                if ($referrerWallet) {
+                    $referrerWallet->referral_amount += $referralBonus;
+                    $referrerWallet->save();
+                } else {
+                    // Create wallet if it doesn't exist
+                    \App\Models\Wallet::create([
+                        'user_id' => $referrerUser->id,
+                        'referral_amount' => $referralBonus,
+                        'deposit_amount' => 0,
+                        'withdrawal_amount' => 0,
+                        'profit_amount' => 0,
+                        'bonus_amount' => 0,
+                        'status' => 'active'
+                    ]);
+                }
+
+                // Log the referral earning
+                Log::info('Referral earning processed:', [
+                    'investing_user_id' => $investingUser->id,
+                    'referrer_user_id' => $referrerUser->id,
+                    'level' => $level,
+                    'investment_amount' => $investmentAmount,
+                    'referral_bonus' => $referralBonus,
+                    'percentage' => $referralPercentages[$level] * 100 . '%'
+                ]);
+
+                // Go up the chain to next level
+                $currentReferralCode = $referrerUser->referral_code;
+                $level++;
+            }
+        } catch (Exception $ex) {
+            Log::error('Error processing referral earnings: ' . $ex->getMessage());
         }
     }
 

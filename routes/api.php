@@ -7,6 +7,9 @@ use App\Http\Controllers\Api\DepositeController;
 use App\Http\Controllers\Api\InvestmentController;
 use App\Http\Controllers\Api\InvestmentPlanController;
 use App\Http\Controllers\Api\MiningController;
+use App\Http\Controllers\Api\OtpController;
+use App\Http\Controllers\Api\NewsController;
+use App\Http\Controllers\Api\KycController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WithdrawalController;
@@ -49,6 +52,11 @@ Route::get('/migrate/rollback', function () {
 Route::get('/unath', function () {
     return response()->json(['message' => 'Unauthenticated'], 401);
 })->name('login.auth');
+// OTP routes
+Route::post('/otp/send-signup', [OtpController::class, 'sendSignupOtp']);
+Route::post('/otp/send-login', [OtpController::class, 'sendLoginOtp']);
+Route::post('/otp/verify', [OtpController::class, 'verifyOtp']);
+
 Route::post('/register', [UserController::class, 'register']);
 Route::post('/login', [UserController::class, 'login']);
 Route::post('/logout', [UserController::class, 'logout'])->middleware('auth:sanctum');
@@ -65,8 +73,18 @@ Route::post('/approval-deposits/{user_id}/{depositId}', [DepositeController::cla
 
 // withdrawal
 Route::post('/withdrawal', [WithdrawalController::class, 'store'])->middleware('auth:sanctum');
+Route::post('/withdrawal/otp', [OtpController::class, 'sendWithdrawalOtp'])->middleware('auth:sanctum');
 // withdrawal approval
 Route::put('/approval-withdrawal/{user_id}/{withdrawalId}', [WithdrawalController::class, 'update'])->middleware('auth:sanctum');
+
+// News routes
+Route::get('/news', [NewsController::class, 'index'])->middleware('auth:sanctum');
+Route::get('/news/{type}', [NewsController::class, 'getByType'])->middleware('auth:sanctum');
+
+// KYC routes
+Route::post('/kyc/upload', [KycController::class, 'upload'])->middleware('auth:sanctum');
+Route::get('/kyc/documents', [KycController::class, 'userDocuments'])->middleware('auth:sanctum');
+Route::get('/kyc/download/{id}', [KycController::class, 'download'])->middleware('auth:sanctum');
 
 Route::get('/dashboard', [DashboardController::class, 'dashboard'])->middleware('auth:sanctum');
 Route::get('/about', [DashboardController::class, 'about'])->middleware('auth:sanctum');

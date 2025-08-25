@@ -8,6 +8,8 @@ use App\Http\Requests\UserRequest;
 use App\Models\Referrals;
 use App\Models\User;
 use App\Models\Wallet;
+use App\Models\Otp;
+use App\Services\OtpService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,31 +19,57 @@ use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
+    protected $otpService;
+
+    public function __construct(OtpService $otpService)
+    {
+        $this->otpService = $otpService;
+    }
     // register
     public function register(UserRequest $request)
     {
         try {
             $data = $request->validated();
-            $data['user_code'] = Str::lower($data['name']) . rand(100, 999);
+            
+            // Check if OTP is provided and valid
+            if (!isset($data['otp'])) {
+                return ResponseHelper::error('OTP is required for registration', 422);
+            }
 
+            // Verify OTP
+            $otpResult = $this->otpService->verifyOtp($data['email'], $data['otp'], 'signup');
+            if (!$otpResult['success']) {
+                return ResponseHelper::error($otpResult['message'], 422);
+            }
+
+            // Check if user already exists
+            $existingUser = User::where('email', $data['email'])->first();
+            if ($existingUser) {
+                return ResponseHelper::error('User with this email already exists', 422);
+            }
+
+            $data['user_code'] = Str::lower($data['name']) . rand(100, 999);
+            $data['password'] = Hash::make($data['password']);
 
             $user = User::create($data);
             $this->createWallet($user);
-            // $referral = $user['referral_code'];
+            
+            // Create referral record
             Referrals::create([
                 'referral_code' => $user->user_code,
                 'user_id' => $user->id
             ]);
+
+            // Process referral if provided
             if (!empty($user['referral_code'])) {
                 $referralRecord = Referrals::where('referral_code', $user['referral_code'])->first();
-
 
                 if ($referralRecord) {
                     $bonusAmount = $referralRecord->bonus_amount ?? 0;
                     $perUserBonus = 0;
 
                     // Get current total referrals
-                    $total = $referralRecord->total_referrals ;
+                    $total = $referralRecord->total_referrals;
                     $total += 1; // Increment locally
 
                     // Determine per-user bonus based on new total
@@ -66,9 +94,7 @@ class UserController extends Controller
                         $bonusAmount = 300;
                     }
 
-
-
-                    // Step 4: Update values and save
+                    // Update values and save
                     if ($referralRecord) {
                         Referrals::where('id', $referralRecord->id)->update([
                             'total_referrals' => $total,
@@ -77,15 +103,16 @@ class UserController extends Controller
                         ]);
                     }
                 }
-                 if (!empty($user['referral_code'])) {
-            // Multi-level referral bonus chain
-            $this->processReferralChain($user, $user['referral_code']);
-        }
+                
+                if (!empty($user['referral_code'])) {
+                    // Multi-level referral chain
+                    $this->processReferralChain($user, $user['referral_code']);
+                }
             }
 
-            return ResponseHelper::success($user, 'User is created successsfully');
+            return ResponseHelper::success($user, 'User is created successfully');
         } catch (Exception $ex) {
-            return ResponseHelper::error('User is not create' . $ex);
+            return ResponseHelper::error('User is not created: ' . $ex->getMessage());
         }
     }
     protected function processReferralChain($newUser, $referralCode, $baseBonus = 100)
@@ -156,11 +183,18 @@ class UserController extends Controller
         try {
             $user = $request->validate([
                 'email' => 'required|email',
-                'password' => 'required'
+                'password' => 'required',
+                'otp' => 'required|string|size:6'
             ]);
-            // Log::info('Login attempt', ['email' => $user['email']]);
 
-            if (Auth::attempt($user)) {
+            // First verify OTP
+            $otpResult = $this->otpService->verifyOtp($user['email'], $user['otp'], 'login');
+            if (!$otpResult['success']) {
+                return ResponseHelper::error($otpResult['message'], 422);
+            }
+
+            // Then attempt login
+            if (Auth::attempt(['email' => $user['email'], 'password' => $user['password']])) {
                 $authUser = Auth::user();
                 $token = $authUser->createToken("API Token")->plainTextToken;
 
@@ -175,7 +209,7 @@ class UserController extends Controller
                 return ResponseHelper::error('Invalid credentials', 401);
             }
         } catch (Exception $ex) {
-            return ResponseHelper::error('User is not Login' . $ex);
+            return ResponseHelper::error('User is not Login: ' . $ex->getMessage());
         }
     }
 

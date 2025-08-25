@@ -24,7 +24,6 @@ class UserRequest extends FormRequest
     public function rules(): array
     {
         return [
-
             'name'             => 'nullable|string|max:255',
             'user_name'        => 'nullable|string|max:255',
             'email'            => 'nullable|email|max:255|unique:users,email',
@@ -35,6 +34,7 @@ class UserRequest extends FormRequest
             'status'           => 'nullable|string',
             'email_verified_at' => 'nullable|date',
             'password'         => 'nullable|string|min:6',
+            'otp'              => 'nullable|string|size:6',
         ];
     }
     protected function failedValidation(Validator $validator)

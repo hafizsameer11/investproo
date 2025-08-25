@@ -4,6 +4,8 @@ use App\Http\Controllers\Admin\ChainController;
 use App\Http\Controllers\Admin\InvestmentPlanController;
 use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Admin\ReferralController;
+use App\Http\Controllers\Admin\NewsController as AdminNewsController;
+use App\Http\Controllers\Admin\KycController as AdminKycController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DepositeController;
 use App\Http\Controllers\Api\TransactionController;
@@ -52,4 +54,19 @@ Route::get('/transactions', [TransactionController::class, 'index'])->name('tran
 Route::resource('/chains', ChainController::class);
 // referrals
 Route::get('/referrals', [ReferralController::class, 'index'])->name('referrals');
+
+// News management
+Route::get('/news', [AdminNewsController::class, 'index'])->name('news.index');
+Route::get('/news/create', [AdminNewsController::class, 'create'])->name('news.create');
+Route::post('/news', [AdminNewsController::class, 'store'])->name('news.store');
+Route::get('/news/{id}/edit', [AdminNewsController::class, 'edit'])->name('news.edit');
+Route::put('/news/{id}', [AdminNewsController::class, 'update'])->name('news.update');
+Route::delete('/news/{id}', [AdminNewsController::class, 'destroy'])->name('news.destroy');
+
+// KYC management
+Route::get('/kyc', [AdminKycController::class, 'index'])->name('kyc.index');
+Route::get('/kyc/pending', [AdminKycController::class, 'pending'])->name('kyc.pending');
+Route::get('/kyc/{id}', [AdminKycController::class, 'show'])->name('kyc.show');
+Route::put('/kyc/{id}/review', [AdminKycController::class, 'review'])->name('kyc.review');
+Route::delete('/kyc/{id}', [AdminKycController::class, 'destroy'])->name('kyc.destroy');
 });

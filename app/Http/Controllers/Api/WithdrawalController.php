@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Models\Withdrawal;
+use App\Services\OtpService;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -15,20 +16,44 @@ use Illuminate\Support\Facades\Log;
 
 class WithdrawalController extends Controller
 {
+    protected $otpService;
+
+    public function __construct(OtpService $otpService)
+    {
+        $this->otpService = $otpService;
+    }
     public function store(Request $request)
     {
-        try
-       { 
-        $data = $request->validate([
-            'amount'=>'required'
-        ]);
-        $data['user_id'] = Auth::id();
-        $data['status'] = 'pending';
-        $withdrawal = Withdrawal::create($data);
-        
-        return ResponseHelper::success($withdrawal, 'Withdrawal successfully');
-    } catch (Exception $ex) {
-            return ResponseHelper::error('Please try again for withdrawal' . $ex);
+        try { 
+            $data = $request->validate([
+                'amount' => 'required|numeric|min:1',
+                'otp' => 'required|string|size:6'
+            ]);
+
+            $user = Auth::user();
+            if (!$user) {
+                return ResponseHelper::error('User not authenticated', 401);
+            }
+
+            // Verify OTP
+            $otpResult = $this->otpService->verifyOtp($user->email, $data['otp'], 'withdrawal');
+            if (!$otpResult['success']) {
+                return ResponseHelper::error($otpResult['message'], 422);
+            }
+
+            // Check if user has sufficient balance
+            $wallet = Wallet::where('user_id', $user->id)->first();
+            if (!$wallet || $wallet->deposit_amount < $data['amount']) {
+                return ResponseHelper::error('Insufficient balance for withdrawal', 422);
+            }
+
+            $data['user_id'] = $user->id;
+            $data['status'] = 'pending';
+            $withdrawal = Withdrawal::create($data);
+            
+            return ResponseHelper::success($withdrawal, 'Withdrawal request submitted successfully');
+        } catch (Exception $ex) {
+            return ResponseHelper::error('Please try again for withdrawal: ' . $ex->getMessage());
         }
     }
 
