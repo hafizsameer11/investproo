@@ -252,6 +252,16 @@ class DepositeController extends Controller
                     ]);
                 }
 
+                // Create transaction record for referral earning
+                \App\Models\Transaction::create([
+                    'user_id' => $referrerUser->id,
+                    'type' => 'referral',
+                    'amount' => $referralBonus,
+                    'status' => 'completed',
+                    'description' => "Referral bonus from {$investingUser->name} (Level {$level})",
+                    'reference_id' => $investingUser->id,
+                ]);
+
                 // Log the referral earning
                 Log::info('Referral earning processed:', [
                     'investing_user_id' => $investingUser->id,

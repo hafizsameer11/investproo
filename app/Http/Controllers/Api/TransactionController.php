@@ -11,22 +11,41 @@ class TransactionController extends Controller
 {
      public function userTransactions()
     {
-        $user = Auth::user();
+        try {
+            $user = Auth::user();
 
-        if (!$user) {
-            return response()->json(['message' => 'Unauthorized'], 401);
+            if (!$user) {
+                return response()->json(['message' => 'Unauthorized'], 401);
+            }
+
+            // Fetch all transactions related to the authenticated user
+            $transactions = Transaction::where('user_id', $user->id)
+                                ->orderBy('created_at', 'desc')
+                                ->get()
+                                ->map(function ($transaction) {
+                                    return [
+                                        'id' => $transaction->id,
+                                        'type' => $transaction->type,
+                                        'amount' => (float) $transaction->amount,
+                                        'status' => $transaction->status,
+                                        'description' => $transaction->description,
+                                        'created_at' => $transaction->created_at,
+                                        'updated_at' => $transaction->updated_at,
+                                    ];
+                                });
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'User transactions retrieved successfully.',
+                'data' => $transactions
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Transaction error: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to retrieve transactions: ' . $e->getMessage()
+            ], 500);
         }
-
-        // Fetch all transactions related to the authenticated user
-        $transactions = Transaction::with(['deposit', 'withdrawal']) // Optional: eager load related models
-                            ->where('user_id', $user->id)
-                            ->get();
-        // dd($transactions);  
-        return response()->json([
-            'status' => true,
-            'message' => 'User transactions retrieved successfully.',
-            'data' => $transactions
-        ]);
     }
 
 

@@ -7,10 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 class Transaction extends Model
 {
     protected $fillable = [
-    'user_id',
-    'withdrawal_id',
-    'deposit_id',
-];
+        'user_id',
+        'type',
+        'amount',
+        'status',
+        'description',
+        'reference_id',
+        'withdrawal_id',
+        'deposit_id',
+    ];
 
 
     public function user()
