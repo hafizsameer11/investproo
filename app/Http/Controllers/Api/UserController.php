@@ -48,7 +48,7 @@ class UserController extends Controller
                 return ResponseHelper::error('User with this email already exists', 422);
             }
 
-            $data['user_code'] = Str::lower($data['name']) . rand(100, 999);
+            $data['user_code'] = strtolower(str_replace(' ', '', $data['name'])) . rand(100, 999);
             $data['password'] = Hash::make($data['password']);
 
             $user = User::create($data);

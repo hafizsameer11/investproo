@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\MiningController;
 use App\Http\Controllers\Api\OtpController;
 use App\Http\Controllers\Api\NewsController;
 use App\Http\Controllers\Api\KycController;
+use App\Http\Controllers\Api\ReferralController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WithdrawalController;
@@ -117,3 +118,8 @@ Route::post('/mining/start', [MiningController::class, 'start'])->middleware('au
 Route::get('/mining/status', [MiningController::class, 'status'])->middleware('auth:sanctum');
 Route::post('/mining/stop', [MiningController::class, 'stop'])->middleware('auth:sanctum');
 Route::post('/mining/claim-rewards', [MiningController::class, 'claimRewards'])->middleware('auth:sanctum');
+
+// Referral routes
+Route::get('/referrals/my-referrals', [ReferralController::class, 'getMyReferrals'])->middleware('auth:sanctum');
+Route::get('/referrals/network', [ReferralController::class, 'getReferralNetwork'])->middleware('auth:sanctum');
+Route::get('/referrals/stats', [ReferralController::class, 'getReferralStats'])->middleware('auth:sanctum');
