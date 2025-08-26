@@ -32,7 +32,7 @@ class PlanController extends Controller
 
     public function update(Request $request, $id)
     {
-        dd($request->all());
+        // dd($request->all());
         $plan = InvestmentPlan::findOrFail($id);
         $data = $request->validate([
             'plan_name' => 'nullable|string|max:255',
