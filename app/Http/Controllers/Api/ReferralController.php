@@ -35,7 +35,7 @@ class ReferralController extends Controller
                     'referrals' => [],
                     'stats'     => [
                         'total_referrals' => 0,
-                        'total_earnings'  => $wallet ? $wallet->referral_earnings : 0,
+                        'total_earnings'  => $wallet ? $wallet->referral_amount : 0,
                         'referral_code'   => '',
                     ],
                 ],
@@ -65,7 +65,7 @@ class ReferralController extends Controller
                 'referrals' => $referrals,
                 'stats'     => [
                     'total_referrals' => $rows->count(),
-                    'total_earnings'  => $wallet ? $wallet->referral_earnings : 0, // keep 0 unless you have a payout table to sum from
+                    'total_earnings'  => $wallet ? $wallet->referral_amount : 0, // keep 0 unless you have a payout table to sum from
                     'referral_code'   => $code,
                 ],
             ],
@@ -149,7 +149,7 @@ class ReferralController extends Controller
                 'level_4_referrals' => $levelCounts[4],
                 'level_5_referrals' => $levelCounts[5],
                 'total_referrals'   => $totalReferrals,
-                'total_earnings'    => $wallet ? $wallet->referral_earnings : 0,      // set from your payouts if/when available
+                'total_earnings'    => $wallet ? $wallet->referral_amount : 0,      // set from your payouts if/when available
                 'referral_code'     => $rootCode,
                 'per_user_bonus'    => 0,      // keep 0 unless you have a rule/table
             ],
