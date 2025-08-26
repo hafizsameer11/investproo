@@ -18,7 +18,7 @@
                     <th>Min Amount</th>
                     <th>Max Amount</th>
                     <th>Profit %</th>
-                    <th>Duration (Months)</th>
+                    <th>Duration (Days)</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
@@ -31,7 +31,7 @@
                         <td>${{ number_format($plan->min_amount, 2) }}</td>
                         <td>${{ number_format($plan->max_amount, 2) }}</td>
                         <td>{{ $plan->profit_percentage }}%</td>
-                        <td>{{ $plan->duration }} Months</td>
+                        <td>{{ $plan->duration }} Days</td>
                         <td>
                             @if ($plan->status == 'active')
                                 <span class="badge bg-success">Active</span>
@@ -105,7 +105,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="duration" class="form-label">Duration (Month)</label>
+                        <label for="duration" class="form-label">Duration (Days)</label>
                         <input type="number" name="duration" id="duration" class="form-control"
                              required>
                     </div>
