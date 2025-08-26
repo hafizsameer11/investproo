@@ -17,7 +17,7 @@ class ReferralController extends Controller
         }
 
         $rows = Referrals::with('user')
-            ->where('referrer_code', $user->user_code)
+            ->where('referral_code', $user->user_code)
             ->latest()
             ->get();
 
@@ -35,10 +35,10 @@ class ReferralController extends Controller
             return response()->json(['status'=>'error','message'=>'Unauthenticated'], 401);
         }
 
-        $total = Referrals::where('referrer_code', $user->user_code)->count();
+        $total = Referrals::where('referral_code', $user->user_code)->count();
 
         // "active" definition: referred user has status = 'active' (adjust if different field)
-        $active = Referrals::where('referrer_code', $user->user_code)
+        $active = Referrals::where('referral_code', $user->user_code)
             ->whereHas('user', fn($q) => $q->where('status', 'active'))
             ->count();
 
@@ -62,7 +62,7 @@ class ReferralController extends Controller
 
         // Single-level for now. If you implement tree later, extend this.
         $level1 = Referrals::with('user')
-            ->where('referrer_code', $user->user_code)
+            ->where('referral_code', $user->user_code)
             ->get();
 
         return response()->json([

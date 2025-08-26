@@ -21,13 +21,12 @@ class DepositeController extends Controller
 {
     public function store(DepositRequest $request)
     {
-        try
-        {
+        try {
             $data = $request->validated();
-            
+
             $user = Auth::user();
             // $wallet = Wallet::where('user_id', $user->id)->first();
-            
+
             // Handle image upload
             if (isset($data['deposit_picture']) && $data['deposit_picture'] && $data['deposit_picture'] instanceof \Illuminate\Http\UploadedFile) {
                 $img = $data['deposit_picture'];
@@ -39,14 +38,14 @@ class DepositeController extends Controller
                 // If no image uploaded, set to null
                 $data['deposit_picture'] = null;
             }
-            
+
             $data['user_id'] = Auth::id();
             $data['deposit_date'] = Carbon::now();
             $data['status'] = 'pending'; // Deposit needs approval
             $data['investment_plan_id'] = null; // No plan for deposit-only flow
             $chain_id = $data['chain_id'] ?? null;
             $chain_details = $chain_id ? Chain::where('id', $chain_id)->get() : null;
-            
+
             $deposit = Deposit::create($data);
             $response = [
                 'deposit_detail' => $deposit,
@@ -61,16 +60,15 @@ class DepositeController extends Controller
 
     public function activatePlan(Request $request, string $planId)
     {
-        try
-        {
+        try {
             $data = $request->validate([
                 'amount' => 'required|numeric|min:1',
             ]);
-            
+
             $user = Auth::user();
             $wallet = Wallet::where('user_id', $user->id)->first();
             $plan = \App\Models\InvestmentPlan::find($planId);
-            
+
             Log::info('Plan activation request:', [
                 'user_id' => $user->id,
                 'plan_id' => $planId,
@@ -83,51 +81,51 @@ class DepositeController extends Controller
                     'referral_amount' => $wallet->referral_amount ?? 0,
                 ]
             ]);
-            
+
             if (!$plan) {
                 return ResponseHelper::error('Investment plan not found', 404);
             }
-            
+
             // Calculate total available balance (including deposit amount)
-            $totalBalance = ($wallet->deposit_amount ?? 0) + 
-                           ($wallet->withdrawal_amount ?? 0) + 
-                           ($wallet->profit_amount ?? 0) + 
-                           ($wallet->bonus_amount ?? 0) + 
-                           ($wallet->referral_amount ?? 0);
-            
+            $totalBalance = ($wallet->deposit_amount ?? 0) +
+                ($wallet->withdrawal_amount ?? 0) +
+                ($wallet->profit_amount ?? 0) +
+                ($wallet->bonus_amount ?? 0) +
+                ($wallet->referral_amount ?? 0);
+
             if ($totalBalance < $data['amount']) {
                 return ResponseHelper::error('Insufficient balance. Please deposit first.', 400);
             }
-            
+
             // Check if plan minimum amount is met
             if ($data['amount'] < $plan->min_amount) {
                 return ResponseHelper::error("Minimum amount for this plan is $" . $plan->min_amount, 400);
             }
-            
+
             // Check if plan maximum amount is not exceeded
             if ($data['amount'] > $plan->max_amount) {
                 return ResponseHelper::error("Maximum amount for this plan is $" . $plan->max_amount, 400);
             }
-            
+
             // Deduct amount from wallet (prioritize deposit_amount first)
             $deductedAmount = min($data['amount'], $totalBalance);
             $remainingAmount = $deductedAmount;
-            
+
             // Calculate new wallet values
             $newDepositAmount = max(0, ($wallet->deposit_amount ?? 0) - $remainingAmount);
             $remainingAmount = max(0, $remainingAmount - ($wallet->deposit_amount ?? 0));
-            
+
             $newWithdrawalAmount = max(0, ($wallet->withdrawal_amount ?? 0) - $remainingAmount);
             $remainingAmount = max(0, $remainingAmount - ($wallet->withdrawal_amount ?? 0));
-            
+
             $newProfitAmount = max(0, ($wallet->profit_amount ?? 0) - $remainingAmount);
             $remainingAmount = max(0, $remainingAmount - ($wallet->profit_amount ?? 0));
-            
+
             $newBonusAmount = max(0, ($wallet->bonus_amount ?? 0) - $remainingAmount);
             $remainingAmount = max(0, $remainingAmount - ($wallet->bonus_amount ?? 0));
-            
+
             $newReferralAmount = max(0, ($wallet->referral_amount ?? 0) - $remainingAmount);
-            
+
             Wallet::where('user_id', $user->id)->update([
                 'deposit_amount' => $newDepositAmount,
                 'withdrawal_amount' => $newWithdrawalAmount,
@@ -135,7 +133,7 @@ class DepositeController extends Controller
                 'bonus_amount' => $newBonusAmount,
                 'referral_amount' => $newReferralAmount,
             ]);
-            
+
             // Create investment
             $investment = Investment::create([
                 'user_id' => $user->id,
@@ -145,7 +143,7 @@ class DepositeController extends Controller
                 'end_date' => Carbon::now()->addDays($plan->duration_days),
                 'status' => 'active'
             ]);
-            
+
             // Create transaction record
             Transaction::create([
                 'user_id' => $user->id,
@@ -154,7 +152,7 @@ class DepositeController extends Controller
                 'amount' => $deductedAmount,
                 'status' => 'completed'
             ]);
-            
+
             // Process referral earnings for this investment
             Log::info('Starting referral earnings processing for investment:', [
                 'user_id' => $user->id,
@@ -163,14 +161,14 @@ class DepositeController extends Controller
                 'plan_id' => $plan->id
             ]);
             $this->processInvestmentReferralEarnings($user, $deductedAmount, $plan);
-            
+
             $response = [
                 'investment' => $investment,
                 'plan' => $plan,
                 'amount_invested' => $deductedAmount,
                 'remaining_balance' => $totalBalance - $deductedAmount
             ];
-            
+
             return ResponseHelper::success($response, 'Plan activated successfully!');
         } catch (Exception $ex) {
             return ResponseHelper::error('Plan activation failed: ' . $ex->getMessage());
@@ -281,39 +279,39 @@ class DepositeController extends Controller
         }
     }
 
-   public function update(Request $request, $depositId)
-{
-    
+    public function update(Request $request, $depositId)
+    {
 
-    $deposit = Deposit::findOrFail($depositId);
 
-    // Update deposit status
-    $deposit->update([
-        'status'=>'active'
-    ]);
+        $deposit = Deposit::findOrFail($depositId);
 
-    // Create investment for the user
-    // Investment::create([
-    //     'user_id' => $deposit->user_id,
-    //     'investment_plan_id' => $deposit->investment_plan_id,
-    //     'start_date' => Carbon::now(),
-    //     'end_date' => Carbon::now()->addMonth(),
-    //     'status' => 'active'
-    // ]);
-    Transaction::create([
-        'user_id'=> $deposit->user_id,
-        'deposit_id'=> $deposit->id
-    ]);
-    Log::info('Deposit status updated for user', ['user_id' => $deposit->user_id, 'deposit_id' => $deposit->id]);
-  $wallet = Wallet::where('user_id', $deposit->user_id)->first();
+        // Update deposit status
+        $deposit->update([
+            'status' => 'active'
+        ]);
 
-if ($wallet) {
-    $wallet->deposit_amount += $deposit->amount;
-    $wallet->save();
-}
+        // Create investment for the user
+        // Investment::create([
+        //     'user_id' => $deposit->user_id,
+        //     'investment_plan_id' => $deposit->investment_plan_id,
+        //     'start_date' => Carbon::now(),
+        //     'end_date' => Carbon::now()->addMonth(),
+        //     'status' => 'active'
+        // ]);
+        Transaction::create([
+            'user_id' => $deposit->user_id,
+            'deposit_id' => $deposit->id
+        ]);
+        Log::info('Deposit status updated for user', ['user_id' => $deposit->user_id, 'deposit_id' => $deposit->id]);
+        $wallet = Wallet::where('user_id', $deposit->user_id)->first();
 
-    return redirect()->route('deposits');
-}
+        if ($wallet) {
+            $wallet->deposit_amount += $deposit->amount;
+            $wallet->save();
+        }
+
+        return redirect()->route('deposits');
+    }
 
 
     public function index()
@@ -323,35 +321,35 @@ if ($wallet) {
         $pending_deposits = Deposit::where('status', 'pending')->count();
         $active_deposits = Deposit::where('status', 'active')->count();
         $chains = Chain::all();
-        return view('admin.pages.deposit', compact('all_deposits','total_deposits', 'active_deposits','pending_deposits', 'chains'));
-}
-// update chain address
-public function updateChain(Request $request, $id)
+        return view('admin.pages.deposit', compact('all_deposits', 'total_deposits', 'active_deposits', 'pending_deposits', 'chains'));
+    }
+    // update chain address
+    public function updateChain(Request $request, $id)
     {
-         $request->validate([
-        'chain_id' => 'nullable',
-    ]);
-    $deposit = Deposit::findOrFail($id);
-    $deposit->chain_id = $request->chain_id;
-    $deposit->save();
+        $request->validate([
+            'chain_id' => 'nullable',
+        ]);
+        $deposit = Deposit::findOrFail($id);
+        $deposit->chain_id = $request->chain_id;
+        $deposit->save();
 
         return redirect()->route('deposits')->with('success', 'Deposit chain updated successfully.');
     }
     public function destroy($id)
-{
-    // dd($id);
-    $deposit = Deposit::findOrFail($id);
+    {
+        // dd($id);
+        $deposit = Deposit::findOrFail($id);
 
-    // Optional: Delete deposit image from storage if exists
-    if ($deposit->deposit_picture && Storage::exists($deposit->deposit_picture)) {
-        Storage::delete($deposit->deposit_picture);
+        // Optional: Delete deposit image from storage if exists
+        if ($deposit->deposit_picture && Storage::exists($deposit->deposit_picture)) {
+            Storage::delete($deposit->deposit_picture);
+        }
+
+        // Delete the deposit record
+        $deposit->delete();
+
+        return redirect()->back()->with('success', 'Deposit deleted successfully.');
     }
-
-    // Delete the deposit record
-    $deposit->delete();
-
-    return redirect()->back()->with('success', 'Deposit deleted successfully.');
-}
 
     // Get user deposits
     public function userDeposits()
@@ -362,7 +360,7 @@ public function updateChain(Request $request, $id)
                 ->with(['investmentPlan', 'chain'])
                 ->orderBy('created_at', 'desc')
                 ->get();
-                
+
             return ResponseHelper::success($deposits, 'User deposits retrieved successfully');
         } catch (Exception $ex) {
             return ResponseHelper::error('Failed to retrieve deposits: ' . $ex->getMessage());
