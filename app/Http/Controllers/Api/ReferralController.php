@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Referrals;
 use App\Models\User;
+use App\Models\Wallet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +25,7 @@ class ReferralController extends Controller
         }
 
         $code = (string) ($user->user_code ?? '');
+        $wallet=Wallet::where('user_id',$user->id)->first();
         if ($code === '') {
             // No code on this user -> nothing to return
             return response()->json([
@@ -33,7 +35,7 @@ class ReferralController extends Controller
                     'referrals' => [],
                     'stats'     => [
                         'total_referrals' => 0,
-                        'total_earnings'  => 0,
+                        'total_earnings'  => $wallet ? $wallet->referral_earnings : 0,
                         'referral_code'   => '',
                     ],
                 ],
@@ -63,7 +65,7 @@ class ReferralController extends Controller
                 'referrals' => $referrals,
                 'stats'     => [
                     'total_referrals' => $rows->count(),
-                    'total_earnings'  => 0, // keep 0 unless you have a payout table to sum from
+                    'total_earnings'  => $wallet ? $wallet->referral_earnings : 0, // keep 0 unless you have a payout table to sum from
                     'referral_code'   => $code,
                 ],
             ],
@@ -134,7 +136,7 @@ class ReferralController extends Controller
             if (empty($currentCodes)) break; // no deeper levels
         }
         // -------------------------------------------
-
+        $wallet=Wallet::where('user_id',$user->id)->first();
         $totalReferrals = array_sum($levelCounts);
 
         return response()->json([
@@ -147,7 +149,7 @@ class ReferralController extends Controller
                 'level_4_referrals' => $levelCounts[4],
                 'level_5_referrals' => $levelCounts[5],
                 'total_referrals'   => $totalReferrals,
-                'total_earnings'    => 0,      // set from your payouts if/when available
+                'total_earnings'    => $wallet ? $wallet->referral_earnings : 0,      // set from your payouts if/when available
                 'referral_code'     => $rootCode,
                 'per_user_bonus'    => 0,      // keep 0 unless you have a rule/table
             ],
