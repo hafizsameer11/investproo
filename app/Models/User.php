@@ -73,4 +73,18 @@ public function referral()
             'password' => 'hashed',
         ];
     }
+    // app/Models/User.php
+
+public function directReferrals()
+{
+    // My level-1 referrals are users whose referral_code equals my user_code
+    return $this->hasMany(User::class, 'referral_code', 'user_code');
+}
+
+public function sponsor()
+{
+    // The user who referred me (their user_code == my referral_code)
+    return $this->belongsTo(User::class, 'referral_code', 'user_code');
+}
+
 }
