@@ -26,8 +26,12 @@ class WithdrawalController extends Controller
     {
         try { 
             $data = $request->validate([
-                'amount' => 'required|numeric|min:1',
-                'otp' => 'required|string|size:6'
+                'amount' => 'required|numeric|min:50',
+                'wallet_address' => 'required|string|min:10',
+                'crypto_type' => 'required|string',
+                'password' => 'required|string',
+                'otp' => 'required|string|size:6',
+                'notes' => 'nullable|string'
             ]);
 
             $user = Auth::user();
@@ -43,16 +47,42 @@ class WithdrawalController extends Controller
 
             // Check if user has sufficient balance
             $wallet = Wallet::where('user_id', $user->id)->first();
-            if (!$wallet || $wallet->deposit_amount < $data['amount']) {
-                return ResponseHelper::error('Insufficient balance for withdrawal', 422);
+            if (!$wallet) {
+                return ResponseHelper::error('Wallet not found', 422);
             }
 
-            $data['user_id'] = $user->id;
-            $data['status'] = 'pending';
-            $withdrawal = Withdrawal::create($data);
+            // Calculate total available balance
+            $totalBalance = ($wallet->deposit_amount ?? 0) + ($wallet->profit_amount ?? 0) + ($wallet->bonus_amount ?? 0) + ($wallet->referral_amount ?? 0);
+            
+            if ($totalBalance < $data['amount']) {
+                return ResponseHelper::error('Insufficient balance for withdrawal. Available: $' . number_format($totalBalance, 2), 422);
+            }
+
+            // Create withdrawal record
+            $withdrawalData = [
+                'user_id' => $user->id,
+                'amount' => $data['amount'],
+                'wallet_address' => $data['wallet_address'],
+                'crypto_type' => $data['crypto_type'],
+                'notes' => $data['notes'] ?? '',
+                'status' => 'pending',
+            ];
+
+            $withdrawal = Withdrawal::create($withdrawalData);
+
+            // Create transaction record
+            Transaction::create([
+                'user_id' => $user->id,
+                'type' => 'withdrawal',
+                'amount' => $data['amount'],
+                'status' => 'pending',
+                'description' => "Withdrawal request - {$data['crypto_type']}",
+                'reference_id' => $withdrawal->id,
+            ]);
             
             return ResponseHelper::success($withdrawal, 'Withdrawal request submitted successfully');
         } catch (Exception $ex) {
+            \Log::error('Withdrawal error: ' . $ex->getMessage());
             return ResponseHelper::error('Please try again for withdrawal: ' . $ex->getMessage());
         }
     }

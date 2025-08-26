@@ -48,8 +48,21 @@ class DashboardController extends Controller
                 'withdrawal_amount' => $balance->withdrawal_amount ?? 0,
             ]);
             
-            // Calculate total balance including deposit amount
-            $total_balance = ($balance->deposit_amount ?? 0) + ($balance->profit_amount ?? 0) + ($balance->bonus_amount ?? 0) + ($balance->referral_amount ?? 0);
+            // Calculate total balance including all amounts
+            $deposit     = (float)($balance->deposit_amount ?? 0);
+            $profit      = (float)($balance->profit_amount ?? 0);
+            $bonus       = (float)($balance->bonus_amount ?? 0);
+            $referral    = (float)($balance->referral_amount ?? 0);
+            $withdrawals = (float)($balance->withdrawal_amount ?? 0);
+
+            $total_balance = $deposit + $profit + $bonus + $referral - $withdrawals;
+            
+            // Subtract any pending withdrawals from available balance
+            $pendingWithdrawals = Withdrawal::where('user_id', $userId)
+                ->where('status', 'pending')
+                ->sum('amount');
+            
+            $available_balance = $total_balance - $pendingWithdrawals;
             
             \Log::info('Calculated total balance:', ['total_balance' => $total_balance]);
             
@@ -87,11 +100,13 @@ class DashboardController extends Controller
             $referral_bonus = $balance->bonus_amount + $balance->referral_amount;
             $withdrawal_amount = $balance->withdrawal_amount;
             return ResponseHelper::success([
-                'total_balance' => $total_balance,
+                'total_balance' => $available_balance, // Use available balance (total - pending withdrawals)
+                'total_balance_raw' => $total_balance, // Raw total for debugging
                 'active_plans' => $plan,
                 'daily_profit' => $daily_profit,
                 'referral_bonus_earned' => $referral_bonus,
                 'withdrawal_amount' => $withdrawal_amount,
+                'pending_withdrawals' => $pendingWithdrawals, // For debugging
             ], 'Dashboard data retrieved successfully');
         } catch (Exception $ex) {
             return ResponseHelper::error('User is not create' . $ex);

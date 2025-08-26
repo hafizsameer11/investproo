@@ -10,8 +10,8 @@ class ReferralController extends Controller
 {
      public function index()
     {
-        // Eager load user relationship
-        $referrals = Referrals::with('user')->get();
+        // Eager load user relationship and paginate
+        $referrals = Referrals::with('user')->latest()->paginate(20);
 
         return view('admin.pages.referrals', compact('referrals'));
     }

@@ -7,11 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 class Withdrawal extends Model
 {
     protected $fillable = [
-    'user_id',
-    'amount',
-    'withdrawal_date',
-    'status',
-];
+        'user_id',
+        'amount',
+        'wallet_address',
+        'crypto_type',
+        'notes',
+        'withdrawal_date',
+        'status',
+    ];
 public function transactions()
 {
     return $this->hasMany(Transaction::class);

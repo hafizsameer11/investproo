@@ -7,22 +7,30 @@ use App\Http\Controllers\Controller;
 use App\Models\InvestmentPlan;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class InvestmentPlanController extends Controller
 {
     /**
-     * Get all active investment plans
+     * Get investment plans with optional status filter
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $plans = InvestmentPlan::where('status', 'active')
+            $plans = InvestmentPlan::query()
+                ->when($request->filled('status'), function($query) use ($request) {
+                    $status = $request->string('status');
+                    if (in_array($status, ['active', 'inactive'])) {
+                        $query->where('status', $status);
+                    }
+                })
                 ->orderBy('min_amount', 'asc')
                 ->get();
                 
             return ResponseHelper::success($plans, 'Investment plans retrieved successfully');
         } catch (Exception $ex) {
-            return ResponseHelper::error('Failed to retrieve investment plans: ' . $ex->getMessage());
+            Log::error('InvestmentPlanController@index failed', ['error' => $ex->getMessage()]);
+            return ResponseHelper::error('Failed to fetch investment plans');
         }
     }
 
