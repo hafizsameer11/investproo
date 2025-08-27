@@ -70,7 +70,7 @@ Route::post('/login', [UserController::class, 'login']);
 Route::post('/logout', [UserController::class, 'logout'])->middleware('auth:sanctum');
 Route::get('/allUser', [UserController::class, 'allUser'])->middleware('auth:sanctum');
 Route::post('/update', [UserController::class, 'update'])->middleware('auth:sanctum');
-Route::post('/kyc/{user_id}', [UserController::class, 'kyc'])->middleware('auth:sanctum');
+Route::post('/kyc-user/{user_id}', [UserController::class, 'kyc'])->middleware('auth:sanctum');
 Route::get('/profile', [UserController::class, 'profile'])->middleware('auth:sanctum');
 Route::apiResource('/investment_plan', InvestmentPlanController::class)->middleware('auth:sanctum');
 // Deposit routes
