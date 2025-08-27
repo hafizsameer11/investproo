@@ -41,7 +41,7 @@ Route::put('/updateChain/{id}', [DepositeController::class, 'updateChain'])->nam
 
 // withdrawal
 Route::get('withdrawal', [WithdrawalController::class, 'index'])->name('withdrawals');
-Route::put('/withdrawals/{id}', [WithdrawalController::class, 'update'])->name('withdrawals.approve');
+Route::post('/withdrawals/{id}', [WithdrawalController::class, 'update'])->name('withdrawals.approve');
 Route::delete('/withdrawals/{id}', [WithdrawalController::class, 'destroy'])->name('withdrawals.destroy');
 
 // investment plans
