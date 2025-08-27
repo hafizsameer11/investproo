@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\ReferralController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WithdrawalController;
+use App\Http\Controllers\Api\LoyaltyController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -123,3 +124,11 @@ Route::post('/mining/claim-rewards', [MiningController::class, 'claimRewards'])-
 Route::get('/referrals/my-referrals', [ReferralController::class, 'getMyReferrals'])->middleware('auth:sanctum');
 Route::get('/referrals/network', [ReferralController::class, 'getReferralNetwork'])->middleware('auth:sanctum');
 Route::get('/referrals/stats', [ReferralController::class, 'getReferralStats'])->middleware('auth:sanctum');
+
+// Loyalty routes
+Route::get('/loyalty/user-status', [LoyaltyController::class, 'getUserLoyalty'])->middleware('auth:sanctum');
+Route::get('/loyalty/tiers', [LoyaltyController::class, 'getAllLoyalties'])->middleware('auth:sanctum');
+Route::post('/loyalty/tiers', [LoyaltyController::class, 'store'])->middleware('auth:sanctum');
+Route::put('/loyalty/tiers/{id}', [LoyaltyController::class, 'update'])->middleware('auth:sanctum');
+Route::delete('/loyalty/tiers/{id}', [LoyaltyController::class, 'destroy'])->middleware('auth:sanctum');
+Route::get('/loyalty/tiers/{id}', [LoyaltyController::class, 'show'])->middleware('auth:sanctum');

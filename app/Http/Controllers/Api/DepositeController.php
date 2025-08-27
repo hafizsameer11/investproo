@@ -150,6 +150,11 @@ class DepositeController extends Controller
             'status'              => 'active',
         ]);
 
+        // --- Track loyalty: Set first investment date if not set ---
+        if (!$user->first_investment_date) {
+            $user->update(['first_investment_date' => Carbon::now()]);
+        }
+
         // --- Investor-side transaction (self) ---
         Transaction::create([
             'user_id'      => $user->id,              // owner (investor)

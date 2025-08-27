@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Admin\ReferralController;
 use App\Http\Controllers\Admin\NewsController as AdminNewsController;
 use App\Http\Controllers\Admin\KycController as AdminKycController;
+use App\Http\Controllers\Admin\LoyaltyController as AdminLoyaltyController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DepositeController;
 use App\Http\Controllers\Api\TransactionController;
@@ -69,4 +70,13 @@ Route::get('/kyc/pending', [AdminKycController::class, 'pending'])->name('kyc.pe
 Route::get('/kyc/{id}', [AdminKycController::class, 'show'])->name('kyc.show');
 Route::put('/kyc/{id}/review', [AdminKycController::class, 'review'])->name('kyc.review');
 Route::delete('/kyc/{id}', [AdminKycController::class, 'destroy'])->name('kyc.destroy');
+
+// Loyalty management
+Route::get('/loyalty', [AdminLoyaltyController::class, 'index'])->name('loyalty.index');
+Route::get('/loyalty/create', [AdminLoyaltyController::class, 'create'])->name('loyalty.create');
+Route::post('/loyalty', [AdminLoyaltyController::class, 'store'])->name('loyalty.store');
+Route::get('/loyalty/{id}/edit', [AdminLoyaltyController::class, 'edit'])->name('loyalty.edit');
+Route::put('/loyalty/{id}', [AdminLoyaltyController::class, 'update'])->name('loyalty.update');
+Route::delete('/loyalty/{id}', [AdminLoyaltyController::class, 'destroy'])->name('loyalty.destroy');
+Route::put('/loyalty/{id}/toggle-status', [AdminLoyaltyController::class, 'toggleStatus'])->name('loyalty.toggle-status');
 });

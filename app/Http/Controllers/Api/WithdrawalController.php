@@ -70,6 +70,37 @@ class WithdrawalController extends Controller
 
             $withdrawal = Withdrawal::create($withdrawalData);
 
+            // --- Track loyalty: Update last withdrawal date and calculate loyalty bonus ---
+            $user->update(['last_withdrawal_date' => Carbon::now()]);
+            
+            // Calculate loyalty bonus if user qualifies
+            $loyaltyProgress = $user->getLoyaltyProgress();
+            $currentTier = $user->getCurrentLoyaltyTier();
+            
+            if ($currentTier && $loyaltyProgress['current_days'] >= $currentTier->days_required) {
+                $loyaltyBonus = ($data['amount'] * $currentTier->bonus_percentage) / 100;
+                
+                if ($loyaltyBonus > 0) {
+                    // Add loyalty bonus to wallet
+                    $wallet->bonus_amount = ($wallet->bonus_amount ?? 0) + $loyaltyBonus;
+                    $wallet->save();
+                    
+                    // Update user's loyalty bonus earned
+                    $user->loyalty_bonus_earned = ($user->loyalty_bonus_earned ?? 0) + $loyaltyBonus;
+                    $user->save();
+                    
+                    // Create loyalty bonus transaction
+                    Transaction::create([
+                        'user_id' => $user->id,
+                        'type' => 'loyalty_bonus',
+                        'amount' => $loyaltyBonus,
+                        'status' => 'completed',
+                        'description' => "Loyalty bonus ({$currentTier->bonus_percentage}%) for {$currentTier->days_required} days",
+                        'reference_id' => $withdrawal->id,
+                    ]);
+                }
+            }
+
             // Create transaction record
             Transaction::create([
                 'user_id' => $user->id,
