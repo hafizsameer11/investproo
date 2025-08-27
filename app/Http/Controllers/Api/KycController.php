@@ -8,7 +8,6 @@ use App\Models\KycDocument;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -21,6 +20,12 @@ class KycController extends Controller
     public function upload(Request $request)
     {
         try {
+            \Log::info('KYC upload request received', [
+                'auth_id' => Auth::id(),
+                'auth_check' => Auth::check(),
+                'user' => Auth::user(),
+                'request_data' => $request->all()
+            ]);
             
             $validator = Validator::make($request->all(), [
                 'document_type' => 'required|in:passport,national_id,drivers_license,utility_bill,bank_statement',
@@ -32,28 +37,28 @@ class KycController extends Controller
                 return ResponseHelper::error($validator->errors()->first(), 422);
             }
 
-            // $user = Auth::user();
+            $user = Auth::user();
             
-            // // Check if user already has a pending document of this type
-            // $existingDocument = KycDocument::where('user_id', $user->id)
-            //     ->where('document_type', $request->document_type)
-            //     ->where('status', 'pending')
-            //     ->first();
+            // Check if user already has a pending document of this type
+            $existingDocument = KycDocument::where('user_id', $user->id)
+                ->where('document_type', $request->document_type)
+                ->where('status', 'pending')
+                ->first();
 
-            // if ($existingDocument) {
-            //     return ResponseHelper::error('You already have a pending document of this type', 422);
-            // }
+            if ($existingDocument) {
+                return ResponseHelper::error('You already have a pending document of this type', 422);
+            }
 
             $file = $request->file('document');
             $originalFilename = $file->getClientOriginalName();
             $extension = $file->getClientOriginalExtension();
-            $filename = 'kyc_ _' . $request->document_type . '_' . time() . '.' . $extension;
+            $filename = 'kyc_' . $user->id . '_' . $request->document_type . '_' . time() . '.' . $extension;
             
             // Store file in storage/app/kyc directory
             $path = $file->storeAs('kyc', $filename, 'local');
 
             $kycDocument = KycDocument::create([
-                'user_id' =>7,
+                'user_id' => $user->id,
                 'document_type' => $request->document_type,
                 'file_path' => $path,
                 'original_filename' => $originalFilename,

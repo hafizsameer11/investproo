@@ -90,7 +90,7 @@ Route::get('/news', [NewsController::class, 'index'])->middleware('auth:sanctum'
 Route::get('/news/{type}', [NewsController::class, 'getByType'])->middleware('auth:sanctum');
 
 // KYC routes
-Route::post('/kyc/upload', [KycController::class, 'upload']);
+Route::post('/kyc/upload', [KycController::class, 'upload'])->middleware('auth:sanctum');
 Route::get('/kyc/documents', [KycController::class, 'userDocuments'])->middleware('auth:sanctum');
 Route::get('/kyc/download/{id}', [KycController::class, 'download'])->middleware('auth:sanctum');
 
