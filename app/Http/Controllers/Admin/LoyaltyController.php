@@ -15,7 +15,7 @@ class LoyaltyController extends Controller
     public function index()
     {
         $loyalties = Loyalty::ordered()->get();
-        return view('admin.loyalty.index', compact('loyalties'));
+        return view('admin.pages.loyalty.index', compact('loyalties'));
     }
 
     /**
@@ -23,7 +23,7 @@ class LoyaltyController extends Controller
      */
     public function create()
     {
-        return view('admin.loyalty.create');
+        return view('admin.pages.loyalty.create');
     }
 
     /**
@@ -57,7 +57,7 @@ class LoyaltyController extends Controller
     public function edit($id)
     {
         $loyalty = Loyalty::findOrFail($id);
-        return view('admin.loyalty.edit', compact('loyalty'));
+        return view('admin.pages.loyalty.edit', compact('loyalty'));
     }
 
     /**

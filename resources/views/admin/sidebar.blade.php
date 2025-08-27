@@ -59,6 +59,9 @@
                             <li>
                                 <a href="{{ route('chains.index') }}" class="waves-effect"><i class="mdi mdi-layers"></i><span> Chain </span></a>
                             </li>
+                            <li>
+                                <a href="{{ route('loyalty.index') }}" class="waves-effect"><i class="mdi mdi-star"></i><span> Loyalty Management </span></a>
+                            </li>
 
 
                             {{-- <li class="has_sub">
