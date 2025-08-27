@@ -8,6 +8,7 @@ use App\Models\KycDocument;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -20,7 +21,7 @@ class KycController extends Controller
     public function upload(Request $request)
     {
         try {
-            \Log::info('KYC upload request received', [
+        Log::info('KYC upload request received', [
                 'auth_id' => Auth::id(),
                 'auth_check' => Auth::check(),
                 'user' => Auth::user(),

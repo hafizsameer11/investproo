@@ -128,6 +128,35 @@ class OtpService
     }
 
     /**
+     * Generate and send OTP for password reset
+     */
+    public function sendPasswordResetOtp(string $email, int $userId): array
+    {
+        try {
+            $otp = Otp::createOtp($email, 'password_reset', $userId);
+            
+            if ($this->sendOtp($email, $otp->otp_code, 'password_reset')) {
+                return [
+                    'success' => true,
+                    'message' => 'Password reset OTP sent successfully to your email',
+                    'expires_in' => 10 // minutes
+                ];
+            }
+
+            return [
+                'success' => false,
+                'message' => 'Failed to send OTP'
+            ];
+        } catch (\Exception $e) {
+            Log::error("Password reset OTP error", ['error' => $e->getMessage()]);
+            return [
+                'success' => false,
+                'message' => 'Failed to generate OTP'
+            ];
+        }
+    }
+
+    /**
      * Verify OTP
      */
     public function verifyOtp(string $email, string $otpCode, string $type): array

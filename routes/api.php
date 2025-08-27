@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WithdrawalController;
 use App\Http\Controllers\Api\LoyaltyController;
+use App\Http\Controllers\Api\PasswordResetController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -58,6 +59,11 @@ Route::get('/unath', function () {
 Route::post('/otp/send-signup', [OtpController::class, 'sendSignupOtp']);
 Route::post('/otp/send-login', [OtpController::class, 'sendLoginOtp']);
 Route::post('/otp/verify', [OtpController::class, 'verifyOtp']);
+
+// Password reset routes
+Route::post('/password/send-reset-otp', [PasswordResetController::class, 'sendResetOtp']);
+Route::post('/password/verify-reset-otp', [PasswordResetController::class, 'verifyResetOtp']);
+Route::post('/password/reset', [PasswordResetController::class, 'resetPassword']);
 
 Route::post('/register', [UserController::class, 'register']);
 Route::post('/login', [UserController::class, 'login']);

@@ -32,3 +32,4 @@ try {
     echo "❌ Error during setup: " . $e->getMessage() . "\n";
     echo "Please make sure your database is running and configured properly.\n";
 }
+
