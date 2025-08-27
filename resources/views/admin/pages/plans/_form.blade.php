@@ -34,4 +34,4 @@
         <option value="active" {{ (old('status', $plan->status ?? '') == 'active') ? 'selected' : '' }}>Active</option>
         <option value="inactive" {{ (old('status', $plan->status ?? '') == 'inactive') ? 'selected' : '' }}>Inactive</option>
     </select> --}}
-</div>
+{{-- </div> --}}

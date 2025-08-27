@@ -100,7 +100,7 @@ class DashboardController extends Controller
             $referral_bonus = $balance->bonus_amount + $balance->referral_amount;
             $withdrawal_amount = $balance->withdrawal_amount;
             return ResponseHelper::success([
-                'total_balance' => $available_balance, // Use available balance (total - pending withdrawals)
+                'total_balance' => $available_balance + $daily_profit, // Use available balance (total - pending withdrawals)
                 'total_balance_raw' => $total_balance, // Raw total for debugging
                 'active_plans' => $plan,
                 'daily_profit' => $daily_profit,

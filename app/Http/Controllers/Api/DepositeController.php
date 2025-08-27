@@ -136,7 +136,7 @@ class DepositeController extends Controller
             return $from - $use;
         };
 
-        $wallet->deposit_amount    = $take($wallet->deposit_amount ?? 0);
+        // $wallet->deposit_amount    = $take($wallet->deposit_amount ?? 0);
         $wallet->withdrawal_amount = $take($wallet->withdrawal_amount ?? 0);
         $wallet->profit_amount     = $take($wallet->profit_amount ?? 0);
         $wallet->bonus_amount      = $take($wallet->bonus_amount ?? 0);
