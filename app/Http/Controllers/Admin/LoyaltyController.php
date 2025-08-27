@@ -47,7 +47,7 @@ class LoyaltyController extends Controller
 
         Loyalty::create($request->all());
 
-        return redirect()->route('admin.loyalty.index')
+        return redirect()->route('loyalty.index')
             ->with('success', 'Loyalty tier created successfully');
     }
 
@@ -83,7 +83,7 @@ class LoyaltyController extends Controller
 
         $loyalty->update($request->all());
 
-        return redirect()->route('admin.loyalty.index')
+        return redirect()->route('loyalty.index')
             ->with('success', 'Loyalty tier updated successfully');
     }
 
@@ -95,7 +95,7 @@ class LoyaltyController extends Controller
         $loyalty = Loyalty::findOrFail($id);
         $loyalty->delete();
 
-        return redirect()->route('admin.loyalty.index')
+        return redirect()->route('loyalty.index')
             ->with('success', 'Loyalty tier deleted successfully');
     }
 
@@ -108,7 +108,7 @@ class LoyaltyController extends Controller
         $loyalty->update(['is_active' => !$loyalty->is_active]);
 
         $status = $loyalty->is_active ? 'activated' : 'deactivated';
-        return redirect()->route('admin.loyalty.index')
+        return redirect()->route('loyalty.index')
             ->with('success', "Loyalty tier {$status} successfully");
     }
 }
