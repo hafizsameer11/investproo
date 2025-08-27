@@ -91,6 +91,10 @@ class DepositeController extends Controller
         if (!$user) {
             return ResponseHelper::error('User not authenticated', 401);
         }
+        $actualUser=User::find($user->id);
+        $actualUser->first_investment_date = Carbon::now();
+        // $actualUser->loyalty_days = 0;
+        $actualUser->save();
 
         // Lock investor wallet row while we compute/deduct
         $wallet = Wallet::where('user_id', $user->id)->lockForUpdate()->first();
