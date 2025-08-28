@@ -199,73 +199,101 @@ class DepositeController extends Controller
  */
 protected function payReferralTree(User $investor, float $investmentAmount, $plan): array
 {
-    // Define referral percentages per level
     $percentages = [
-        1 => 0.10, // 10%
-        2 => 0.07, // 7%
-        3 => 0.05, // 5%
-        4 => 0.03, // 3%
-        5 => 0.02, // 2%
+        1 => 0.10,
+        2 => 0.07,
+        3 => 0.05,
+        4 => 0.03,
+        5 => 0.02,
     ];
 
-    $level      = 1;
-    $report     = [];
-    $nextCode   = $investor->referral_code; // investor's referral_code points to parent user_code
+    return DB::transaction(function () use ($investor, $investmentAmount, $plan, $percentages) {
+        $level    = 1;
+        $report   = [];
+        $nextCode = $investor->referral_code; // parent user_code
+        $visited  = []; // guard against cycles
 
-    while ($level <= 5 && !empty($nextCode)) {
-        // Lock the referrer user row (and later their wallet) to avoid race conditions
-        $referrer = User::where('user_code', $nextCode)->lockForUpdate()->first();
+        while ($level <= 5 && !empty($nextCode)) {
 
-        if (!$referrer) {
-            Log::info("Referral tree break: no referrer for code {$nextCode} at level {$level}");
-            break;
-        }
+            // Cycle / self guard
+            if (isset($visited[$nextCode])) {
+                Log::warning("Referral cycle detected at code {$nextCode} (level {$level}). Aborting.");
+                break;
+            }
+            $visited[$nextCode] = true;
 
-        $bonus = round($investmentAmount * ($percentages[$level] ?? 0), 2);
-        if ($bonus > 0) {
-            // Ensure referrer wallet exists & lock it
-            $refWallet = Wallet::where('user_id', $referrer->id)->lockForUpdate()->first();
+            // Lock the referrer row
+            $referrer = User::where('user_code', $nextCode)->lockForUpdate()->first();
 
-            if (!$refWallet) {
-                $refWallet = Wallet::create([
-                    'user_id'          => $referrer->id,
-                    'deposit_amount'   => 0,
-                    'withdrawal_amount'=> 0,
-                    'profit_amount'    => 0,
-                    'bonus_amount'     => 0,
-                    'referral_amount'  => 0,
-                    'status'           => 'active',
-                ]);
+            if (!$referrer) {
+                Log::info("Referral tree break: no referrer for code {$nextCode} at level {$level}");
+                break;
             }
 
-            // Credit referral balance
-            $refWallet->referral_amount = ($refWallet->referral_amount ?? 0) + $bonus;
-            $refWallet->save();
+            // Lock the referrer wallet (create if needed later)
+            $refWallet = Wallet::where('user_id', $referrer->id)->lockForUpdate()->first();
 
-            // Create a transaction FOR THE RECIPIENT (this is what you asked for)
-            Transaction::create([
-                'user_id'      => $referrer->id, // recipient
-                'type'         => 'referral',
-                'amount'       => $bonus,
-                'status'       => 'completed',
-                'description'  => "Referral bonus (L{$level}) from {$investor->name} on {$plan->plan_name}",
-                'reference_id' => $investor->id, // who triggered it
-            ]);
+            // Your skip rule: only pay people with deposit_amount >= 1
+            $hasEligibleDeposit = $refWallet && ($refWallet->deposit_amount ?? 0) >= 1;
 
-            $report[] = [
-                'level'          => $level,
-                'recipient_id'   => $referrer->id,
-                'recipient_code' => $referrer->user_code,
-                'bonus'          => $bonus,
-            ];
+            if (!$hasEligibleDeposit) {
+                // advance up the tree and level, then continue
+                $nextCode = $referrer->referral_code;
+                $level++;
+                continue; // SAFE: we advanced pointers
+            }
+
+            $percentage = $percentages[$level] ?? 0;
+            if ($percentage > 0) {
+                $bonus = round($investmentAmount * $percentage, 2);
+
+                if ($bonus > 0) {
+                    // Ensure wallet exists if it didn't
+                    if (!$refWallet) {
+                        $refWallet = Wallet::create([
+                            'user_id'            => $referrer->id,
+                            'deposit_amount'     => 0,
+                            'withdrawal_amount'  => 0,
+                            'profit_amount'      => 0,
+                            'bonus_amount'       => 0,
+                            'referral_amount'    => 0,
+                            'status'             => 'active',
+                        ]);
+                        // Lock it right after creation to be consistent
+                        $refWallet->refresh();
+                        $refWallet = Wallet::where('id', $refWallet->id)->lockForUpdate()->first();
+                    }
+
+                    // Credit referral balance
+                    $refWallet->referral_amount = ($refWallet->referral_amount ?? 0) + $bonus;
+                    $refWallet->save();
+
+                    // Recipient-side transaction record
+                    Transaction::create([
+                        'user_id'      => $referrer->id,
+                        'type'         => 'referral',
+                        'amount'       => $bonus,
+                        'status'       => 'completed',
+                        'description'  => "Referral bonus (L{$level}) from {$investor->name} on {$plan->plan_name}",
+                        'reference_id' => $investor->id,
+                    ]);
+
+                    $report[] = [
+                        'level'          => $level,
+                        'recipient_id'   => $referrer->id,
+                        'recipient_code' => $referrer->user_code,
+                        'bonus'          => $bonus,
+                    ];
+                }
+            }
+
+            // Move up the tree
+            $nextCode = $referrer->referral_code;
+            $level++;
         }
 
-        // Climb up the tree: parent -> grandparent -> ...
-        $nextCode = $referrer->referral_code;
-        $level++;
-    }
-
-    return $report;
+        return $report;
+    });
 }
 
 
