@@ -34,3 +34,4 @@ class Loyalty extends Model
     }
 }
 
+

@@ -88,3 +88,4 @@ echo "1. Send POST to /api/password/send-reset-otp with email\n";
 echo "2. Check email for OTP\n";
 echo "3. Send POST to /api/password/verify-reset-otp with email and OTP\n";
 echo "4. Send POST to /api/password/reset with email, OTP, password, and password_confirmation\n";
+
