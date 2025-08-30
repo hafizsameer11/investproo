@@ -13,7 +13,7 @@
                 <p><strong>User Code:</strong> {{ $user->user_code }}</p>
                 <p><strong>Referral Code:</strong> {{ $user->referral_code }}</p>
                 <p><strong>Referrals:</strong> {{ $referrals->isEmpty() ? 0 : $referrals->count() }}</p>
-               
+
 
                 <p><strong>Status:</strong> {{ ucfirst($user->status) }}</p>
             </div>
@@ -43,7 +43,35 @@
         <div class="card mb-4">
             <div class="card-header"><strong>Referrals Summary</strong></div>
             <div class="card-body">
-               <p><strong>Total Referrals:</strong> {{ $referrals->count() }}</p>
+                @php
+                    $referralsAmount = $user->transactions->where('type', 'referral')->sum('amount');
+                    $totalReferrals = $user->transactions->where('type', 'referral')->where('user_id', $user->id);
+                    // $totalReferrals->reference_id;
+                @endphp
+                <p><strong>Total Referrals:</strong> {{ $referrals->count() }}</p>
+                <p><strong>Referral Amount:</strong> {{ $referralsAmount }}</p>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Referral Name</th>
+                            <th>Referral Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($totalReferrals as $referral)
+                            @php
+                                // Fetch the user by reference_id
+                                $refUser = \App\Models\User::find($referral->reference_id);
+                            @endphp
+                            <tr>
+                                <td>{{ $refUser ? $refUser->name : 'Unknown' }}</td>
+                                <td>{{ number_format($referral->amount, 2) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+
+                <p><strong>Referral Details:</strong> </p>
 
                 @if ($referrals->isNotEmpty())
                     <ul>
@@ -62,10 +90,13 @@
             <div class="card-header"><strong>Deposit Summary</strong></div>
             <div class="card-body">
                 @php
+
+                    $totalDeposit = $user->deposits->where('user_id', $user->id)->sum('amount');
                     $depositPending = $user->deposits->where('status', 'pending')->count();
                     $depositApproved = $user->deposits->where('status', 'approved')->count();
                     $depositRejected = $user->deposits->where('status', 'rejected')->count();
                 @endphp
+                <p><strong>Total Deposit:</strong> ${{ number_format($totalDeposit, 2) }}</p>
                 <p><strong>Pending:</strong> {{ $depositPending }}</p>
                 <p><strong>Approved:</strong> {{ $depositApproved }}</p>
                 <p><strong>Rejected:</strong> {{ $depositRejected }}</p>
@@ -78,17 +109,19 @@
             <div class="card-header"><strong>Withdrawal Summary</strong></div>
             <div class="card-body">
                 @php
+                    $totalWithdrawal = $user->withdrawals->where('user_id', $user->id)->sum('amount');
                     $withdrawalPending = $user->withdrawals->where('status', 'pending')->count();
                     $withdrawalApproved = $user->withdrawals->where('status', 'approved')->count();
                     $withdrawalRejected = $user->withdrawals->where('status', 'rejected')->count();
                 @endphp
+                <p><strong>Total Withdrawal:</strong> ${{ number_format($totalWithdrawal, 2) }}</p>
                 <p><strong>Pending:</strong> {{ $withdrawalPending }}</p>
                 <p><strong>Approved:</strong> {{ $withdrawalApproved }}</p>
                 <p><strong>Rejected:</strong> {{ $withdrawalRejected }}</p>
             </div>
         </div>
     </div>
-     <div class="col-md-6">
+    <div class="col-md-6">
         <div class="card mb-4">
             <div class="card-header"><strong>Investment Summary</strong></div>
             <div class="card-body">
