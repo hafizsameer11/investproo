@@ -134,7 +134,8 @@ class WithdrawalController extends Controller
         ]);
         Transaction::create([
             'user_id'=> $detail['user_id'],
-            'withdrawal_id'=> $withdrawalId
+            'withdrawal_id'=> $withdrawalId,
+            'status'=> 'completed',
         ]);
          return redirect()->back()->with('success', 'Withdrawal approved successfully.');
     } catch (Exception $ex) {
