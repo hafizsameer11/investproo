@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('claimed_amounts', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->unsignedInteger('investment_id')->nullable();
-            $table->foreign('investment_id')->references('id')->on('investments')->onDelete('cascade');
+          $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+
+    // investments.id should be bigIncrements as well
+    $table->foreignId('investment_id')->nullable()->constrained()->cascadeOnDelete();
             $table->decimal('amount', 15, 2);
             $table->string('reason')->nullable();
             $table->timestamps();
