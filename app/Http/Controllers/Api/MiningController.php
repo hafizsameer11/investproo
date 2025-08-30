@@ -122,27 +122,7 @@ class MiningController extends Controller
      */
     public function stop()
     {
-        try {
-            $user = Auth::user();
-            if (!$user) return ResponseHelper::error('Unauthorized', 401);
-
-            $session = MiningSession::where('user_id', $user->id)
-                ->where('status', 'active')
-                ->first();
-
-            if (!$session) {
-                return ResponseHelper::error('No active mining session found', 400);
-            }
-
-            $session->update([
-                'status'     => 'stopped',
-                'stopped_at' => now(),
-            ]);
-
-            return ResponseHelper::success($session, 'Mining session stopped successfully');
-        } catch (Exception $ex) {
-            return ResponseHelper::error('Failed to stop mining session: ' . $ex->getMessage());
-        }
+        return $this->start();
     }
 
     /**
