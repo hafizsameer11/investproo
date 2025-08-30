@@ -113,7 +113,7 @@ class WithdrawalController extends Controller
             
             return ResponseHelper::success($withdrawal, 'Withdrawal request submitted successfully');
         } catch (Exception $ex) {
-            \Log::error('Withdrawal error: ' . $ex->getMessage());
+            Log::error('Withdrawal error: ' . $ex->getMessage());
             return ResponseHelper::error('Please try again for withdrawal: ' . $ex->getMessage());
         }
     }

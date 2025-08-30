@@ -62,7 +62,7 @@ class DashboardController extends Controller
                 ->where('status', 'pending')
                 ->sum('amount');
             
-            $available_balance = $total_balance - $pendingWithdrawals;
+            // $available_balance = $total_balance - $pendingWithdrawals;
             
             \Log::info('Calculated total balance:', ['total_balance' => $total_balance]);
             
