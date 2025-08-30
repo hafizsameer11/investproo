@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
@@ -21,13 +22,13 @@ class DashboardController extends Controller
     {
         try {
             $userId = Auth::id();
-            \Log::info('Dashboard request for user ID: ' . $userId);
+            Log::info('Dashboard request for user ID: ' . $userId);
             
             $balance = Wallet::where('user_id', $userId)->first();
             
             // Check if wallet exists, if not create one
             if (!$balance) {
-                \Log::info('No wallet found for user ' . $userId . ', creating new wallet');
+                Log::info('No wallet found for user ' . $userId . ', creating new wallet');
                 $balance = Wallet::create([
                     'user_id' => $userId,
                     'withdrawal_amount' => 0,
@@ -40,7 +41,7 @@ class DashboardController extends Controller
             }
             
             // Debug: Log the wallet data
-            \Log::info('Wallet data for user ' . Auth::id() . ':', [
+            Log::info('Wallet data for user ' . Auth::id() . ':', [
                 'deposit_amount' => $balance->deposit_amount ?? 0,
                 'profit_amount' => $balance->profit_amount ?? 0,
                 'bonus_amount' => $balance->bonus_amount ?? 0,
@@ -62,9 +63,9 @@ class DashboardController extends Controller
                 ->where('status', 'pending')
                 ->sum('amount');
             
-            $available_balance = $total_balance - $pendingWithdrawals;
+            $available_balance = $total_balance;
             
-            \Log::info('Calculated total balance:', ['total_balance' => $total_balance]);
+            Log::info('Calculated total balance:', ['total_balance' => $total_balance]);
             
             $plan = Investment::where('user_id', Auth::id())
                 ->where('status', 'active')
@@ -86,7 +87,7 @@ class DashboardController extends Controller
             
             $daily_profit = round($daily_profit, 2);
             
-            \Log::info('Daily profit calculation:', [
+            Log::info('Daily profit calculation:', [
                 'active_investments_count' => $activeInvestments->count(),
                 'daily_profit' => $daily_profit,
                 'investments_details' => $activeInvestments->map(function($inv) {
@@ -142,7 +143,7 @@ class DashboardController extends Controller
                 'active_plans' => (string)$active_investments,
             ], 'About data retrieved successfully');
         } catch (Exception $ex) {
-            \Log::error('About data error: ' . $ex->getMessage());
+            Log::error('About data error: ' . $ex->getMessage());
             return ResponseHelper::error('Failed to retrieve about data: ' . $ex->getMessage());
         }
     }
