@@ -158,12 +158,13 @@ class MiningController extends Controller
             if (!$user) return ResponseHelper::error('Unauthorized', 401);
 
             $session = MiningSession::where('user_id', $user->id)
-                ->where('status', 'completed')
+                ->where('status', 'active')
                 ->where('rewards_claimed', false)
                 ->orderBy('started_at') // oldest first, if multiple completed
                 ->first();
 
             if (!$session) {
+                
                 return ResponseHelper::error('No completed mining session with unclaimed rewards', 400);
             }
 
