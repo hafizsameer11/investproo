@@ -100,6 +100,7 @@ class MiningController extends Controller
                     'status'         => 'completed',
                     'progress'       => 100,
                     'time_remaining' => 0,
+                    'session'        => $session
                 ], 'Mining session completed. Please claim your rewards.');
             }
 
