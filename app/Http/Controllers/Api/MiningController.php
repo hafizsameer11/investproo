@@ -148,6 +148,7 @@ public function status()
 }
 
 
+
     /**
      * Stop an active session (no rewards credited).
      */
