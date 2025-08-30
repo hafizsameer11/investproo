@@ -14,6 +14,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MiningController extends Controller
 {
@@ -65,17 +66,13 @@ public function status()
 {
     try {
         $user = Auth::user();
-        if (!$user) {
-            return ResponseHelper::error('Unauthorized', 401);
-        }
+        if (!$user) return ResponseHelper::error('Unauthorized', 401);
 
-        // Latest relevant session
         $session = MiningSession::where('user_id', $user->id)
             ->whereIn('status', ['active', 'completed'])
             ->orderByDesc('id')
             ->first();
 
-        // No session at all → idle
         if (!$session) {
             return ResponseHelper::success([
                 'status'         => 'idle',
@@ -83,59 +80,72 @@ public function status()
                 'time_remaining' => 0,
                 'started_at'     => null,
                 'session'        => null,
+                'debug'          => ['reason' => 'no_session'],
             ], 'No active mining session');
         }
 
-        // Constants
-        $duration = 24 * 60 * 60; // 24h (seconds)
+        // Casts safeguard (optional)
+        // Ensure in your model: protected $casts = ['progress' => 'float', 'started_at' => 'datetime', 'stopped_at' => 'datetime'];
 
-        // If not active, just normalize/clamp and return
+        $duration = 24 * 60 * 60; // 24h seconds
+        $updatesRan = false;
+
+        // Non-active branch
         if ($session->status !== 'active') {
-            // completed or anything else non-active
-            $safeProgress = 0.00;
-            if ($session->status === 'completed') {
-                $safeProgress = 100.00;
-                if ((float)$session->progress !== 100.00) {
-                    $session->update(['progress' => 100.00]);
-                }
-            } else {
-                // e.g. stopped; clamp stored progress
-                $stored = (float)($session->progress ?? 0);
-                $safeProgress = max(0.00, min(100.00, $stored));
-                if ((float)$session->progress !== $safeProgress) {
-                    $session->update(['progress' => $safeProgress]);
-                }
+            $safeProgress = ($session->status === 'completed') ? 100.00 : max(0.00, min(100.00, (float)($session->progress ?? 0)));
+            if ((float)$session->progress !== (float)$safeProgress) {
+                $session->update(['progress' => $safeProgress]);
+                $updatesRan = true;
             }
-
             $session->refresh();
 
+            Log::info('mining.status non-active', [
+                'user_id' => $user->id,
+                'status'  => $session->status,
+                'progress_db' => $session->progress,
+                'updates_ran' => $updatesRan,
+            ]);
+
             return ResponseHelper::success([
-                'status'         => $session->status,   // 'completed' or other non-active
-                'progress'       => (float)$session->progress, // already normalized
-                'time_remaining' => 0,                  // only counts down while active
+                'status'         => $session->status,
+                'progress'       => (float)$session->progress,
+                'time_remaining' => 0,
                 'started_at'     => $session->started_at,
                 'session'        => $session,
+                'debug'          => ['branch' => 'non_active'],
             ], $session->status === 'completed'
                 ? 'Mining session completed. Please claim your rewards.'
                 : 'Mining session not active');
         }
 
-        // ===== Active session → compute strictly from timestamps (UTC) =====
-        // Force both sides to UTC and use SIGNED diff; clamp after.
+        // ===== ACTIVE: compute strictly from timestamps (UTC) =====
         $startedAt = \Carbon\Carbon::parse($session->started_at)->utc();
         $nowUtc    = now('UTC');
 
-        // signed seconds (negative if started_at in the future)
+        // signed diff
         $elapsed = $nowUtc->diffInSeconds($startedAt, false);
-        // clamp to [0, duration]
+        $rawElapsed = $elapsed;
         if ($elapsed < 0) $elapsed = 0;
         if ($elapsed > $duration) $elapsed = $duration;
 
-        $progress = ($elapsed / $duration) * 100.0;     // 0..100
-        $progress = round($progress, 2);
-        $timeRemaining = (int) max(0, $duration - $elapsed); // 0..86400
+        $progress = round(($elapsed / $duration) * 100, 2);
+        $timeRemaining = (int) max(0, $duration - $elapsed);
 
-        // Transition when reaching 100%
+        $log = [
+            'user_id'        => $user->id,
+            'session_id'     => $session->id,
+            'started_at_db'  => (string) $session->started_at,
+            'started_at_utc' => $startedAt->toIso8601String(),
+            'now_utc'        => $nowUtc->toIso8601String(),
+            'raw_elapsed_s'  => $rawElapsed,
+            'clamped_elapsed_s' => $elapsed,
+            'progress_calc'  => $progress,
+            'time_remaining' => $timeRemaining,
+            'status_before'  => $session->status,
+            'progress_db_before' => (float)$session->progress,
+        ];
+
+        // Hit 100% → complete
         if ($progress >= 100.00) {
             $updates = [
                 'status'   => 'completed',
@@ -145,7 +155,14 @@ public function status()
                 $updates['stopped_at'] = $nowUtc;
             }
             $session->update($updates);
+            $updatesRan = true;
+
             $session->refresh();
+            $log['status_after'] = $session->status;
+            $log['progress_db_after'] = (float)$session->progress;
+            $log['updates_ran'] = $updatesRan;
+
+            Log::info('mining.status transitioned_to_completed', $log);
 
             return ResponseHelper::success([
                 'status'         => 'completed',
@@ -153,27 +170,38 @@ public function status()
                 'time_remaining' => 0,
                 'started_at'     => $session->started_at,
                 'session'        => $session,
+                'debug'          => ['branch' => 'completed'],
             ], 'Mining session completed. Please claim your rewards.');
         }
 
-        // Still running → persist current progress if changed
+        // Still running → persist progress if changed
         if ((float)$session->progress !== (float)$progress) {
             $session->update(['progress' => $progress]);
+            $updatesRan = true;
         }
         $session->refresh();
 
+        $log['status_after'] = $session->status;
+        $log['progress_db_after'] = (float)$session->progress;
+        $log['updates_ran'] = $updatesRan;
+
+        Log::info('mining.status active_running', $log);
+
         return ResponseHelper::success([
             'status'         => 'active',
-            'progress'       => (float)$session->progress, // 0..100 (never negative)
+            'progress'       => (float)$session->progress, // 0..100
             'time_remaining' => $timeRemaining,            // 0..86400
             'started_at'     => $session->started_at,
             'session'        => $session,
+            'debug'          => ['branch' => 'active_running'],
         ], 'Mining session in progress');
 
     } catch (\Throwable $ex) {
+        Log::error('mining.status error', ['ex' => $ex->getMessage(), 'trace' => $ex->getTraceAsString()]);
         return ResponseHelper::error('Failed to get mining status: ' . $ex->getMessage());
     }
 }
+
 
 
 
