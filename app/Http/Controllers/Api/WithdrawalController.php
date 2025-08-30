@@ -96,7 +96,7 @@ class WithdrawalController extends Controller
                         'amount' => $loyaltyBonus,
                         'status' => 'completed',
                         'description' => "Loyalty bonus ({$currentTier->bonus_percentage}%) for {$currentTier->days_required} days",
-                        'reference_id' => $withdrawal->id,
+                        'withdrawal_id' => $withdrawal->id,
                     ]);
                 }
             }
@@ -108,7 +108,7 @@ class WithdrawalController extends Controller
                 'amount' => $data['amount'],
                 'status' => 'pending',
                 'description' => "Withdrawal request - {$data['crypto_type']}",
-                'reference_id' => $withdrawal->id,
+                'withdrawal_id' => $withdrawal->id,
             ]);
             
             return ResponseHelper::success($withdrawal, 'Withdrawal request submitted successfully');
@@ -132,11 +132,9 @@ class WithdrawalController extends Controller
         $wallet = Wallet::where('user_id', $detail['user_id'])->update([
             'withdrawal_amount' => $detail['amount'],
         ]);
-        Transaction::create([
-            'user_id'=> $detail['user_id'],
-            'withdrawal_id'=> $withdrawalId,
-            'status'=> 'completed',
-        ]);
+      $transactions=Transaction::where('withdrawal_id', $withdrawalId)->update([
+        'status' => 'completed',
+    ]);
          return redirect()->back()->with('success', 'Withdrawal approved successfully.');
     } catch (Exception $ex) {
             return ResponseHelper::error('Not approved the  withdrawal' . $ex);
