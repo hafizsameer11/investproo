@@ -139,7 +139,6 @@ class KycController extends Controller
             $documents = KycDocument::with(['user', 'reviewedBy'])
                 ->orderBy('created_at', 'desc')
                 ->get();
-
             return ResponseHelper::success($documents, 'All KYC documents retrieved successfully');
         } catch (\Exception $e) {
             return ResponseHelper::error('Failed to retrieve documents: ' . $e->getMessage(), 500);

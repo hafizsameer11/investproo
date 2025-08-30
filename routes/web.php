@@ -33,6 +33,7 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/kyc/{user_id}', [UserController::class, 'kyc'])->name('kyc');
 Route::get('/user-page', [UserController::class, 'user_page'])->name('users');
 Route::delete('/deleteUser/{id}', [UserController::class, 'deleteUser'])->name('destroy.user');
+Route::get('/user/{id}/detail', [UserController::class, 'userDetail'])->name('user.detail');
 // deposite
 Route::get('/deposit', [DepositeController::class, 'index'])->name('deposits');
 Route::get('/update/{depositId}', [DepositeController::class, 'update'])->name('deposits.verify');
@@ -70,6 +71,8 @@ Route::get('/kyc/pending', [AdminKycController::class, 'pending'])->name('kyc.pe
 Route::get('/kyc/{id}', [AdminKycController::class, 'show'])->name('kyc.show');
 Route::put('/kyc/{id}/review', [AdminKycController::class, 'review'])->name('kyc.review');
 Route::delete('/kyc/{id}', [AdminKycController::class, 'destroy'])->name('kyc.destroy');
+Route::get('/adminDownload/{id}', [AdminKycController::class, 'download'])->name('kyc.adminDownload');
+Route::get('/document-view/{id}', [AdminKycController::class, 'viewFile'])->name('document.view');
 
 // Loyalty management
 Route::get('/loyalty', [AdminLoyaltyController::class, 'index'])->name('loyalty.index');

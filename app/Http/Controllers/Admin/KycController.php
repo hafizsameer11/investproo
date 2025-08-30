@@ -7,7 +7,11 @@ use App\Models\KycDocument;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use PDF;
+
+
 
 class KycController extends Controller
 {
@@ -22,7 +26,7 @@ class KycController extends Controller
         $approvedDocuments = KycDocument::where('status', 'approved')->count();
         $rejectedDocuments = KycDocument::where('status', 'rejected')->count();
 
-        return view('admin.pages.kyc', compact('documents', 'totalDocuments', 'pendingDocuments', 'approvedDocuments', 'rejectedDocuments'));
+        return view('admin.pages.kyc.index', compact('documents', 'totalDocuments', 'pendingDocuments', 'approvedDocuments', 'rejectedDocuments'));
     }
 
     public function pending()
@@ -69,20 +73,30 @@ class KycController extends Controller
 
     public function download($id)
     {
-        $document = KycDocument::findOrFail($id);
 
-        if (!Storage::disk('local')->exists($document->file_path)) {
-            return back()->with('error', 'File not found');
+        $document = KycDocument::with('user')->findOrFail($id);
+        if (!$document) {
+            Log::error("Document not found for ID: $id");
+            abort(404, 'Document not found');
         }
 
-        $file = Storage::disk('local')->get($document->file_path);
-        $mimeType = Storage::disk('local')->mimeType($document->file_path);
 
-        return response($file, 200)
-            ->header('Content-Type', $mimeType)
-            ->header('Content-Disposition', 'inline; filename="' . $document->original_filename . '"');
+        $path = storage_path('app/private/' . $document->file_path);
+        return response()->download($path, $document->original_filename);
     }
 
+    public function viewFile($id)
+    {
+        // dd($id);
+        $document = KycDocument::findOrFail($id);
+        $path = storage_path('app/private/' . $document->file_path);
+        // dd($path);
+        // if (!Storage::exists($path)) {
+        //     abort(404);
+        // }
+
+        return response()->file($path);
+    }
     public function destroy($id)
     {
         $document = KycDocument::findOrFail($id);

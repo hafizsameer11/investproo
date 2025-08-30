@@ -50,9 +50,22 @@ public function withdrawals()
 {
     return $this->hasMany(Withdrawal::class);
 }
+public function investments()
+{
+    return $this->hasMany(Investment::class);
+}
 public function referral()
 {
     return $this->hasOne(Referrals::class);
+}
+public function wallet()
+ {
+     return $this->hasOne(Wallet::class); 
+}
+
+public function referrals()
+{
+    return $this->hasMany(User::class, 'referral_code', 'user_code');
 }
 
     /**

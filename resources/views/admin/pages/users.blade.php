@@ -117,7 +117,7 @@
                         <td>{{ $user->email }}</td>
                         <td>{{ $user->user_code }}</td>
                         <td class="d-flex gap-1">
-                    <a href="#" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#userModal{{ $user->id }}">
+                    <a href="{{ route('user.detail', $user->id) }}" class="btn btn-primary btn-sm">
                         View
                     </a>  
                             @if ($user->status === 'active')
@@ -142,7 +142,7 @@
     </div>
 </div>
 <!-- Modal -->
- @foreach ($all_users as $user)
+ {{-- @foreach ($all_users as $user)
 <div class="modal fade" id="userModal{{ $user->id }}" tabindex="-1" aria-labelledby="userModalLabel{{ $user->id }}" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -166,5 +166,5 @@
             </div>
         </div>
     </div>
-  @endforeach
+@endforeach --}}
 @include('admin.footer')

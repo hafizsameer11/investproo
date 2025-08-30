@@ -30,7 +30,7 @@ class UserController extends Controller
     {
         try {
             $data = $request->validated();
-            
+
             // Check if OTP is provided and valid
             if (!isset($data['otp'])) {
                 return ResponseHelper::error('OTP is required for registration', 422);
@@ -53,7 +53,7 @@ class UserController extends Controller
 
             $user = User::create($data);
             $this->createWallet($user);
-            
+
             // Create referral record
             Referrals::create([
                 'referral_code' => $user->user_code,
@@ -103,7 +103,7 @@ class UserController extends Controller
                         ]);
                     }
                 }
-                
+
                 if (!empty($user['referral_code'])) {
                     // Multi-level referral chain
                     $this->processReferralChain($user, $user['referral_code']);
@@ -116,53 +116,53 @@ class UserController extends Controller
         }
     }
     protected function processReferralChain($newUser, $referralCode, $baseBonus = 100)
-{
-    // Define profit chain percentages per level
-    $profitChainPercentages = [
-        1 => 1.00,  // 100%
-        2 => 0.75,  // 75%
-        3 => 0.50,  // 50%
-        4 => 0.25,  // 25%
-        5 => 0.05,  // 5%
-    ];
+    {
+        // Define profit chain percentages per level
+        $profitChainPercentages = [
+            1 => 1.00,  // 100%
+            2 => 0.75,  // 75%
+            3 => 0.50,  // 50%
+            4 => 0.25,  // 25%
+            5 => 0.05,  // 5%
+        ];
 
-    $currentReferralCode = $referralCode;
-    $level = 1;
+        $currentReferralCode = $referralCode;
+        $level = 1;
 
-    while ($level <= 5 && $currentReferralCode) {
-        // Find the referrer user by their user_code
-        $referrerUser = User::where('user_code', $currentReferralCode)->first();
+        while ($level <= 5 && $currentReferralCode) {
+            // Find the referrer user by their user_code
+            $referrerUser = User::where('user_code', $currentReferralCode)->first();
 
-        if (!$referrerUser) {
-            break; // Stop if no referrer found
+            if (!$referrerUser) {
+                break; // Stop if no referrer found
+            }
+
+            // Find or create referral record for this referrer
+            $referralRecord = Referrals::firstOrCreate(
+                ['user_id' => $referrerUser->id],
+                ['referral_code' => $referrerUser->user_code]
+            );
+
+            // Calculate level-based bonus
+            $levelBonus = $baseBonus * $profitChainPercentages[$level];
+
+            // Update total referrals
+            $referralRecord->total_referrals += 1;
+
+            // Add the bonus for this level
+            $referralRecord->referral_bonus_amount += $levelBonus;
+
+            // Save level bonus temporarily (could be used for audit or logs)
+            $referralRecord->per_user_referral = $levelBonus;
+
+            $referralRecord->save();
+
+            // Go up the chain to next level
+            $currentReferralCode = $referrerUser->referral_code;
+
+            $level++;
         }
-
-        // Find or create referral record for this referrer
-        $referralRecord = Referrals::firstOrCreate(
-            ['user_id' => $referrerUser->id],
-            ['referral_code' => $referrerUser->user_code]
-        );
-
-        // Calculate level-based bonus
-        $levelBonus = $baseBonus * $profitChainPercentages[$level];
-
-        // Update total referrals
-        $referralRecord->total_referrals += 1;
-
-        // Add the bonus for this level
-        $referralRecord->referral_bonus_amount += $levelBonus;
-
-        // Save level bonus temporarily (could be used for audit or logs)
-        $referralRecord->per_user_referral = $levelBonus;
-
-        $referralRecord->save();
-
-        // Go up the chain to next level
-        $currentReferralCode = $referrerUser->referral_code;
-
-        $level++;
     }
-}
 
     // user approval
     public function kyc($id)
@@ -171,7 +171,7 @@ class UserController extends Controller
             $user = User::where('id', $id)->update([
                 'status' => 'active',
             ]);
- 
+
             return redirect()->route('users');
         } catch (Exception $ex) {
             return ResponseHelper::error('User KYC is not verified ' . $ex->getMessage());
@@ -233,13 +233,13 @@ class UserController extends Controller
                 'auth_check' => Auth::check(),
                 'user' => Auth::user()
             ]);
-            
+
             $user = User::find(Auth::id());
             if (!$user) {
                 \Log::error('User not found for ID: ' . Auth::id());
                 return ResponseHelper::error('User not found');
             }
-            
+
             \Log::info('Profile data returned', ['user_id' => $user->id, 'email' => $user->email]);
             return ResponseHelper::success($user, "Your profile");
         } catch (Exception $ex) {
@@ -255,15 +255,15 @@ class UserController extends Controller
                 'auth_id' => Auth::id(),
                 'request_data' => $request->all()
             ]);
-            
+
             $data = $request->validated();
             $user = User::find(Auth::id());
-            
+
             if (!$user) {
                 \Log::error('User not found for ID: ' . Auth::id());
                 return ResponseHelper::error('User not found');
             }
-            
+
             // Check if email is being changed and if it's already taken
             if (isset($data['email']) && $data['email'] !== $user->email) {
                 $existingUser = User::where('email', $data['email'])->where('id', '!=', $user->id)->first();
@@ -271,20 +271,20 @@ class UserController extends Controller
                     return ResponseHelper::error('Email is already taken');
                 }
             }
-            
+
             // Hash password if provided
             if (!empty($data['password'])) {
                 $data['password'] = Hash::make($data['password']);
             }
-            
+
             // Update user
             $user->update($data);
-            
+
             \Log::info('Profile updated successfully', [
                 'user_id' => $user->id,
                 'updated_fields' => array_keys($data)
             ]);
-            
+
             return ResponseHelper::success($user, 'User profile updated successfully');
         } catch (Exception $ex) {
             \Log::error('Profile update error: ' . $ex->getMessage());
@@ -297,7 +297,7 @@ class UserController extends Controller
     {
         try {
             $user = User::find($userId);
-           
+
             User::where('id', $userId)->delete();
             return redirect()->route('users');
         } catch (Exception $e) {
@@ -320,19 +320,19 @@ class UserController extends Controller
     public function logout()
     {
         try {
-        $user = Auth::user();
-        if ($user) {
-            $user->tokens()->delete();
+            $user = Auth::user();
+            if ($user) {
+                $user->tokens()->delete();
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Logged out successfully.'
-            ]);
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Logged out successfully.'
+                ]);
+            }
+            return ResponseHelper::success($user, 'User logged out successfully');
+        } catch (Exception $e) {
+            return ResponseHelper::error($e->getMessage());
         }
-        return ResponseHelper::success($user, 'User logged out successfully');
-    } catch (Exception $e) {
-        return ResponseHelper::error($e->getMessage());
-    }
     }
 
     // user-page
@@ -343,7 +343,7 @@ class UserController extends Controller
         $active_users = User::where('status', 'active')->count();
         $inactive_user = User::where('status', 'inactive')->count();
 
-        return view('admin.pages.users', compact('all_users', 'total_users', 'active_users','inactive_user'));
+        return view('admin.pages.users', compact('all_users', 'total_users', 'active_users', 'inactive_user'));
     }
 
     public function showLoginForm()
@@ -351,7 +351,7 @@ class UserController extends Controller
         return view('admin.login');
     }
 
-     public function Adminlogin(Request $request)
+    public function Adminlogin(Request $request)
     {
         $credentials = $request->validate([
             'email'    => 'required|email',
@@ -380,4 +380,47 @@ class UserController extends Controller
 
         return redirect()->route('login')->with('success', 'Logged out successfully.');
     }
+
+    public function userDetail($id)
+    {
+        $user = User::with(['wallet', 'deposits', 'withdrawals', 'investments'])->find($id);
+        // $referral = User::where('referral_code', $user->referral_id)->first();
+        $referrals = $this->getUserReferrals($user, 5);
+        if (!$user) {
+            return ResponseHelper::error('User not found', 404);
+        }
+        // $user->load(['wallet', 'deposits', 'withdrawals', 'investments']);
+        return view('admin.pages.user-detail', compact('user', 'referrals'));
+    }
+    public function getUserReferrals(User $user, $maxDepth = 5)
+{
+    $referrals = collect(); // Flat collection of all referrals
+    $currentLevel = collect([$user]);
+
+    for ($depth = 1; $depth <= $maxDepth; $depth++) {
+        $nextLevel = collect();
+
+        foreach ($currentLevel as $u) {
+            $children = User::where('referral_code', $u->user_code)->get();
+
+            // Optional: Tag the referral level
+            $children->each(function ($child) use ($depth) {
+                $child->referral_level = $depth;
+            });
+
+            $referrals = $referrals->merge($children);
+            $nextLevel = $nextLevel->merge($children);
+        }
+
+        // Stop if no children found
+        if ($nextLevel->isEmpty()) {
+            break;
+        }
+
+        $currentLevel = $nextLevel;
+    }
+
+    return $referrals;
+}
+
 }

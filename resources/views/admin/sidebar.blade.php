@@ -62,6 +62,9 @@
                             <li>
                                 <a href="{{ route('loyalty.index') }}" class="waves-effect"><i class="mdi mdi-star"></i><span> Loyalty Management </span></a>
                             </li>
+                            <li>
+                                <a href="{{ route('kyc.index') }}" class="waves-effect"><i class="mdi mdi-star"></i><span> KYC Documnets </span></a>
+                            </li>
 
 
                             {{-- <li class="has_sub">

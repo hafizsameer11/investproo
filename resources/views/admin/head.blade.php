@@ -16,11 +16,11 @@
     {{-- <link href="css/jquery-jvectormap-2.0.2.css" rel="stylesheet"> --}}
     {{-- <link href="css/vanillaCalendar.css" rel="stylesheet" type="text/css"  /> --}}
 
-    <link href="css/morris.css" rel="stylesheet">
+    <link href="{{ asset('css/morris.css') }}" rel="stylesheet">
 
-    <link href="css/bootstrap.min.css" rel="stylesheet" type="text/css">
-    <link href="css/icons.css" rel="stylesheet" type="text/css">
-    <link href="css/style.css" rel="stylesheet" type="text/css">
+    <link href="{{ asset('css/bootstrap.min.css') }}" rel="stylesheet" type="text/css">
+    <link href="{{ asset('css/icons.css') }}" rel="stylesheet" type="text/css">
+    <link href="{{ asset('css/style.css') }}" rel="stylesheet" type="text/css">
 
 </head>
 

@@ -48,7 +48,7 @@
                 @foreach ($all_withdrawals as $index => $withdrawal)
                     <tr>
                         <td>{{ $index + 1 }}</td>
-                        <td>{{ $withdrawal->user->name ?? 'N/A' }}</td>
+                        <td><a href="{{ route('user.detail', $withdrawal->user->id) }}">{{ $withdrawal->user->name ?? 'N/A' }}</a></td>
                         <td>${{ number_format($withdrawal->amount, 2) }}</td>
                         <td>
                             @if ($withdrawal->status === 'active')
@@ -99,7 +99,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p><strong>User:</strong> {{ $withdrawal->user->name ?? 'N/A' }}</p>
+                    <p><strong>User:</strong>{{ $withdrawal->user->name ?? 'N/A' }}</p>
                     <p><strong>Amount:</strong> ${{ $withdrawal->amount }}</p>
                     <p><strong>Status:</strong> {{ ucfirst($withdrawal->status) }}</p>
                     <p><strong>Date:</strong> {{ $withdrawal->withdrawal_date ?? 'Not set' }}</p>
