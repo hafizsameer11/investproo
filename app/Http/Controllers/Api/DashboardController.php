@@ -53,9 +53,9 @@ class DashboardController extends Controller
             $profit      = (float)($balance->profit_amount ?? 0);
             $bonus       = (float)($balance->bonus_amount ?? 0);
             $referral    = (float)($balance->referral_amount ?? 0);
-            $withdrawals = (float)($balance->withdrawal_amount ?? 0);
+            // $withdrawals = (float)($balance->withdrawal_amount ?? 0);
 
-            $total_balance = $deposit + $profit + $bonus + $referral - $withdrawals;
+            $total_balance = $deposit + $profit + $bonus + $referral;
             
             // Subtract any pending withdrawals from available balance
             $pendingWithdrawals = Withdrawal::where('user_id', $userId)
