@@ -110,7 +110,8 @@ class MiningController extends Controller
                 'progress'       => $progress,
                 'time_remaining' => $timeRemaining,
                 'started_at'     => $session->started_at,
-            ], 'Mining session in progress');
+                'session'=> $session
+                        ], 'Mining session in progress');
         } catch (Exception $ex) {
             return ResponseHelper::error('Failed to get mining status: ' . $ex->getMessage());
         }
