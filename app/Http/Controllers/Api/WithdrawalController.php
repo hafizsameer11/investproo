@@ -69,7 +69,7 @@ class WithdrawalController extends Controller
             ];
 
             $withdrawal = Withdrawal::create($withdrawalData);
-
+            $wallet=Wallet::where('user_id', $user->id)->decrement('deposit_amount', $data['amount']); 
             // --- Track loyalty: Update last withdrawal date and calculate loyalty bonus ---
             $user->update(['last_withdrawal_date' => Carbon::now()]);
             
