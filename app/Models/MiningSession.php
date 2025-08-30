@@ -13,6 +13,7 @@ class MiningSession extends Model
         'status',
         'progress',
         'rewards_claimed',
+        'investment_id'
     ];
 
     protected $casts = [

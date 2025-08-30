@@ -175,9 +175,9 @@ class MiningController extends Controller
                 return ResponseHelper::error('Linked investment/plan not found for this session', 422);
             }
 
-            $percentage = (float) $investment->investmentPlan->profit_percentage; // e.g. 5 for 5%
-            $baseAmount = (float) $investment->amount;                             // e.g. 1000
-            $amount = round($baseAmount * ($percentage / 100), 2);                 // e.g. 50.00
+            $percentage = (float) $investment->investmentPlan->profit_percentage; 
+            $baseAmount = (float) $investment->amount;                             
+            $amount = round($baseAmount * ($percentage / 100), 2);             
 
             if ($amount <= 0) {
                 return ResponseHelper::error('Calculated reward amount is zero. Check plan percentage and investment amount.', 422);
@@ -201,7 +201,9 @@ class MiningController extends Controller
                 $wallet->increment('profit_amount', $amount);
 
                 // 3) Mark session claimed
-                $session->update(['rewards_claimed' => true]);
+                $session->update(['rewards_claimed' => true,'status'=>'completed']);
+                // MiningSession::where('id', $session->id)->update(['rewards_claimed' => true]);
+
             });
 
             return ResponseHelper::success([
