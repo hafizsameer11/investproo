@@ -77,6 +77,7 @@ class MiningController extends Controller
                     'status'         => $session?->status ?? 'idle',
                     'progress'       => (float) ($session?->progress ?? 0),
                     'time_remaining' => 0,
+                    'session'        => $session
                 ], $session ? 'Mining session not active' : 'No active mining session');
             }
 
