@@ -14,7 +14,7 @@
     </ul></div>
 @endif
 
-<form action="{{ route('admin.news.update', $news->id) }}" method="POST" class="card p-3">
+<form action="{{ route('news.update', $news->id) }}" method="POST" class="card p-3">
     @csrf @method('PUT')
 
     <div class="mb-3">
@@ -42,7 +42,7 @@
     </div>
 
     <div class="d-flex gap-2">
-        <a href="{{ route('admin.news.index') }}" class="btn btn-outline-secondary">Back</a>
+        <a href="{{ route('news.index') }}" class="btn btn-outline-secondary">Back</a>
         <button class="btn btn-primary">Update</button>
     </div>
 </form>
