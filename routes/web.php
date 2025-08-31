@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\DepositeController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WithdrawalController;
+use App\Http\Controllers\NewsController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -83,3 +84,14 @@ Route::put('/loyalty/{id}', [AdminLoyaltyController::class, 'update'])->name('lo
 Route::delete('/loyalty/{id}', [AdminLoyaltyController::class, 'destroy'])->name('loyalty.destroy');
 Route::put('/loyalty/{id}/toggle-status', [AdminLoyaltyController::class, 'toggleStatus'])->name('loyalty.toggle-status');
 });
+
+  Route::get('/news', [NewsController::class, 'index'])->name('news.index');
+    Route::get('/news/create', [NewsController::class, 'create'])->name('news.create');
+    Route::post('/news', [NewsController::class, 'store'])->name('news.store');
+    Route::get('/news/{news}/edit', [NewsController::class, 'edit'])->name('news.edit');
+    Route::put('/news/{news}', [NewsController::class, 'update'])->name('news.update');
+    Route::delete('/news/{news}', [NewsController::class, 'destroy'])->name('news.destroy');
+
+    // Lightweight endpoints
+    Route::get('/news/{news}', [NewsController::class, 'show'])->name('news.show'); // used by modal
+    Route::put('/news/{news}/status', [NewsController::class, 'updateStatus'])->name('news.status'); // approve/archive/activate
