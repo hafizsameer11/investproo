@@ -19,7 +19,11 @@
 
     <div class="mb-3">
         <label class="form-label">Type</label>
-        <input type="text" name="type" class="form-control" value="{{ old('type') }}" placeholder="e.g. general / announcement">
+         <select name="status" class="form-select" required>
+           <option value="update">Update</option>
+           <option value="info">Info</option>
+           <option value="news">News</option>
+        </select>
     </div>
 
     <div class="mb-3">
