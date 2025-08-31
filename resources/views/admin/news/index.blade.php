@@ -11,6 +11,7 @@
 <div class="row">
     <div class="col-xl-12">
         <div class="row">
+            {{-- Total --}}
             <div class="col-lg-3">
                 <div class="card"><div class="card-body">
                     <div class="d-flex flex-row">
@@ -24,6 +25,7 @@
                 </div></div>
             </div>
 
+            {{-- Active --}}
             <div class="col-lg-3">
                 <div class="card"><div class="card-body">
                     <div class="d-flex flex-row">
@@ -37,31 +39,20 @@
                 </div></div>
             </div>
 
-            {{-- <div class="col-lg-3">
-                <div class="card"><div class="card-body">
-                    <div class="d-flex flex-row">
-                        <div class="col-9 align-self-center">
-                            <div class="m-l-10">
-                                <h2 class="mt-0">{{ $draftNews }}</h2>
-                                <h6 class="mb-0 text-muted">Draft</h6>
-                            </div>
-                        </div>
-                    </div>
-                </div></div>
-            </div> --}}
-
+            {{-- Inactive --}}
             <div class="col-lg-3">
                 <div class="card"><div class="card-body">
                     <div class="d-flex flex-row">
                         <div class="col-9 align-self-center">
                             <div class="m-l-10">
-                                <h2 class="mt-0">{{ $archivedNews }}</h2>
-                                <h6 class="mb-0 text-muted">Archived</h6>
+                                <h2 class="mt-0">{{ $inactiveNews }}</h2>
+                                <h6 class="mb-0 text-muted">Inactive</h6>
                             </div>
                         </div>
                     </div>
                 </div></div>
             </div>
+            {{-- (You can keep the 4th card slot empty or add something like "This Week") --}}
         </div>
 
         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -70,6 +61,7 @@
                     <label class="form-label">Search</label>
                     <input type="text" name="q" value="{{ $q }}" class="form-control" placeholder="Title or content">
                 </div>
+
                 <div class="col-md-2">
                     <label class="form-label">Type</label>
                     <select name="type" class="form-select">
@@ -79,18 +71,21 @@
                         @endforeach
                     </select>
                 </div>
+
                 <div class="col-md-2">
                     <label class="form-label">Status</label>
                     <select name="status" class="form-select">
                         <option value="">All</option>
-                        @foreach(['active','draft','archived'] as $s)
+                        @foreach(['active','inactive'] as $s)
                             <option value="{{ $s }}" @selected($status===$s)>{{ ucfirst($s) }}</option>
                         @endforeach
                     </select>
                 </div>
+
                 <div class="col-md-2">
                     <button class="btn btn-primary w-100" type="submit">Filter</button>
                 </div>
+
                 <div class="col-md-2">
                     <a href="{{ route('admin.news.index') }}" class="btn btn-outline-secondary w-100">Reset</a>
                 </div>
@@ -122,10 +117,8 @@
                                 <td>
                                     @if ($item->status === 'active')
                                         <span class="badge bg-success">Active</span>
-                                    @elseif($item->status === 'draft')
-                                        <span class="badge bg-warning text-dark">Draft</span>
                                     @else
-                                        <span class="badge bg-secondary">Archived</span>
+                                        <span class="badge bg-secondary">Inactive</span>
                                     @endif
                                 </td>
                                 <td>{{ $item->createdBy->name ?? 'N/A' }}</td>
@@ -150,11 +143,12 @@
                                             <button type="submit" class="btn btn-sm btn-success">Activate</button>
                                         </form>
                                     @endif
-                                    @if ($item->status !== 'archived')
+
+                                    @if ($item->status !== 'inactive')
                                         <form action="{{ route('admin.news.status', $item->id) }}" method="POST" class="d-inline">
                                             @csrf @method('PUT')
-                                            <input type="hidden" name="status" value="archived">
-                                            <button type="submit" class="btn btn-sm btn-secondary">Archive</button>
+                                            <input type="hidden" name="status" value="inactive">
+                                            <button type="submit" class="btn btn-sm btn-secondary">Deactivate</button>
                                         </form>
                                     @endif
                                 </td>
@@ -170,7 +164,6 @@
                                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                         </div>
                                         <div class="modal-body">
-                                            {{-- You can also load via route if you prefer: iframe to admin.news.show --}}
                                             <h4 class="mb-1">{{ $item->title }}</h4>
                                             <p class="text-muted mb-2">
                                                 <strong>Type:</strong> {{ ucfirst($item->type ?? 'N/A') }} |
