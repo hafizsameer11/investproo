@@ -37,7 +37,7 @@
                 </div></div>
             </div>
 
-            <div class="col-lg-3">
+            {{-- <div class="col-lg-3">
                 <div class="card"><div class="card-body">
                     <div class="d-flex flex-row">
                         <div class="col-9 align-self-center">
@@ -48,7 +48,7 @@
                         </div>
                     </div>
                 </div></div>
-            </div>
+            </div> --}}
 
             <div class="col-lg-3">
                 <div class="card"><div class="card-body">
