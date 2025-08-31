@@ -258,7 +258,7 @@ public function status()
                 ->where('rewards_claimed', false)
                 ->orderBy('started_at') // oldest first, if multiple completed
                 ->first();
-
+Log::info("session for user $user->email", $session);
             if (!$session) {
                 
                 return ResponseHelper::error('No completed mining session with unclaimed rewards', 400);
