@@ -59,12 +59,12 @@ Route::resource('/chains', ChainController::class);
 Route::get('/referrals', [ReferralController::class, 'index'])->name('referrals');
 
 // News management
-Route::get('/news', [AdminNewsController::class, 'index'])->name('news.index');
-Route::get('/news/create', [AdminNewsController::class, 'create'])->name('news.create');
-Route::post('/news', [AdminNewsController::class, 'store'])->name('news.store');
-Route::get('/news/{id}/edit', [AdminNewsController::class, 'edit'])->name('news.edit');
-Route::put('/news/{id}', [AdminNewsController::class, 'update'])->name('news.update');
-Route::delete('/news/{id}', [AdminNewsController::class, 'destroy'])->name('news.destroy');
+// Route::get('/news', [AdminNewsController::class, 'index'])->name('news.index');
+// Route::get('/news/create', [AdminNewsController::class, 'create'])->name('news.create');
+// Route::post('/news', [AdminNewsController::class, 'store'])->name('news.store');
+// Route::get('/news/{id}/edit', [AdminNewsController::class, 'edit'])->name('news.edit');
+// Route::put('/news/{id}', [AdminNewsController::class, 'update'])->name('news.update');
+// Route::delete('/news/{id}', [AdminNewsController::class, 'destroy'])->name('news.destroy');
 
 // KYC management
 Route::get('/kyc', [AdminKycController::class, 'index'])->name('kyc.index');
