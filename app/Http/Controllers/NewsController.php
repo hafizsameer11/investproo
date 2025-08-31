@@ -36,7 +36,7 @@ class NewsController extends Controller
         // For filter selects
         $allTypes = News::query()->select('type')->distinct()->pluck('type')->filter()->values();
 
-        return view('news.index', compact(
+        return view('admin.news.index', compact(
             'news', 'totalNews', 'activeNews', 'inactiveNews', 'allTypes', 'q', 'type', 'status'
         ));
     }
@@ -44,7 +44,7 @@ class NewsController extends Controller
     public function create()
     {
         $statuses = ['active', 'inactive'];
-        return view('news.create', compact('statuses'));
+        return view('admin.news.create', compact('statuses'));
     }
 
     public function store(Request $request)
@@ -65,7 +65,7 @@ class NewsController extends Controller
     public function edit(News $news)
     {
         $statuses = ['active', 'inactive'];
-        return view('news.edit', compact('news', 'statuses'));
+        return view('admin.news.edit', compact('news', 'statuses'));
     }
 
     public function update(Request $request, News $news)
@@ -91,7 +91,7 @@ class NewsController extends Controller
     // For modal/view-only
     public function show(News $news)
     {
-        return view('news.show', compact('news'));
+        return view('admin.news.show', compact('news'));
     }
 
     // Quick status toggle/update
