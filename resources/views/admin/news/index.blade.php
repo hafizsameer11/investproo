@@ -87,11 +87,11 @@
                 </div>
 
                 <div class="col-md-2">
-                    <a href="{{ route('admin.news.index') }}" class="btn btn-outline-secondary w-100">Reset</a>
+                    <a href="{{ route('news.index') }}" class="btn btn-outline-secondary w-100">Reset</a>
                 </div>
             </form>
 
-            <a href="{{ route('admin.news.create') }}" class="btn btn-success">+ Create News</a>
+            <a href="{{ route('news.create') }}" class="btn btn-success">+ Create News</a>
         </div>
 
         <div class="row mt-2">
@@ -127,9 +127,9 @@
                                     <button class="btn btn-sm btn-info" data-bs-toggle="modal"
                                         data-bs-target="#viewNewsModal{{ $item->id }}">View</button>
 
-                                    <a href="{{ route('admin.news.edit', $item->id) }}" class="btn btn-sm btn-primary">Edit</a>
+                                    <a href="{{ route('news.edit', $item->id) }}" class="btn btn-sm btn-primary">Edit</a>
 
-                                    <form action="{{ route('admin.news.destroy', $item->id) }}" method="POST" class="d-inline"
+                                    <form action="{{ route('news.destroy', $item->id) }}" method="POST" class="d-inline"
                                         onsubmit="return confirm('Delete this news?');">
                                         @csrf @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-danger">Delete</button>
@@ -137,7 +137,7 @@
 
                                     {{-- Quick status buttons --}}
                                     @if ($item->status !== 'active')
-                                        <form action="{{ route('admin.news.status', $item->id) }}" method="POST" class="d-inline">
+                                        <form action="{{ route('news.status', $item->id) }}" method="POST" class="d-inline">
                                             @csrf @method('PUT')
                                             <input type="hidden" name="status" value="active">
                                             <button type="submit" class="btn btn-sm btn-success">Activate</button>
@@ -145,7 +145,7 @@
                                     @endif
 
                                     @if ($item->status !== 'inactive')
-                                        <form action="{{ route('admin.news.status', $item->id) }}" method="POST" class="d-inline">
+                                        <form action="{{ route('news.status', $item->id) }}" method="POST" class="d-inline">
                                             @csrf @method('PUT')
                                             <input type="hidden" name="status" value="inactive">
                                             <button type="submit" class="btn btn-sm btn-secondary">Deactivate</button>
