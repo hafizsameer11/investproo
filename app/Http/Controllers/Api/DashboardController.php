@@ -168,14 +168,13 @@ public function dashboard()
         $all_users = User::all();
         $active_users = User::where('status', 'active')->count();
         $total_withdrawal = Withdrawal::where('status', 'active')->count();
-        $total_deposit = Deposit::whereMonth('created_at', Carbon::now()->month)
-            ->whereYear('created_at', Carbon::now()->year)
-            ->sum('amount');
+        $total_deposit = Deposit::sum('amount');
         $active_withdrawal = Withdrawal::where('status', 'active')->count();
         $pending_withdrawal = Withdrawal::where('status', 'pending')->count();
 
         $approved_deposits = Deposit::where('status', 'active')->count();
         $pending_deposits = Deposit::where('status', 'pending')->count();
+
         return view('admin.index', compact('total_users', 'all_users', 'active_users', 'total_deposit', 'total_withdrawal', 'active_withdrawal', 'pending_withdrawal', 'approved_deposits', 'pending_deposits'));
     }
 }
