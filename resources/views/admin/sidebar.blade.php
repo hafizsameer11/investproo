@@ -68,9 +68,6 @@
                             <li>
                                 <a href="{{ route('news.index') }}" class="waves-effect"><i class="mdi mdi-star"></i><span> News </span></a>
                             </li>
-                            <li>
-                                <a href="{{ route('user-management.index') }}" class="waves-effect"><i class="mdi mdi-account-cog"></i><span> User Management </span></a>
-                            </li>
 
 
                             {{-- <li class="has_sub">

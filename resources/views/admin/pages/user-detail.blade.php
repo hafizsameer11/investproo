@@ -16,6 +16,13 @@
 
 
                 <p><strong>Status:</strong> {{ ucfirst($user->status) }}</p>
+                
+                <!-- Wallet Update Button -->
+                <div class="mt-3">
+                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#updateWalletModal">
+                        <i class="fas fa-wallet"></i> Update Wallet
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -314,6 +321,94 @@
                     </table>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Wallet Modal -->
+<div class="modal fade" id="updateWalletModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update User Wallet</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ route('admin.user.update-wallet', $user->id) }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Warning:</strong> This will directly update the user's wallet balances. Use with caution.
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="deposit_amount" class="form-label">Deposit Amount</label>
+                                <input type="number" class="form-control" id="deposit_amount" name="deposit_amount" 
+                                       value="{{ $user->wallet->deposit_amount ?? 0 }}" step="0.01" min="0">
+                                <small class="text-muted">Current: ${{ number_format($user->wallet->deposit_amount ?? 0, 2) }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="profit_amount" class="form-label">Profit Amount</label>
+                                <input type="number" class="form-control" id="profit_amount" name="profit_amount" 
+                                       value="{{ $user->wallet->profit_amount ?? 0 }}" step="0.01" min="0">
+                                <small class="text-muted">Current: ${{ number_format($user->wallet->profit_amount ?? 0, 2) }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="referral_amount" class="form-label">Referral Amount</label>
+                                <input type="number" class="form-control" id="referral_amount" name="referral_amount" 
+                                       value="{{ $user->wallet->referral_amount ?? 0 }}" step="0.01" min="0">
+                                <small class="text-muted">Current: ${{ number_format($user->wallet->referral_amount ?? 0, 2) }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="bonus_amount" class="form-label">Bonus Amount</label>
+                                <input type="number" class="form-control" id="bonus_amount" name="bonus_amount" 
+                                       value="{{ $user->wallet->bonus_amount ?? 0 }}" step="0.01" min="0">
+                                <small class="text-muted">Current: ${{ number_format($user->wallet->bonus_amount ?? 0, 2) }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="withdrawal_amount" class="form-label">Withdrawal Amount</label>
+                                <input type="number" class="form-control" id="withdrawal_amount" name="withdrawal_amount" 
+                                       value="{{ $user->wallet->withdrawal_amount ?? 0 }}" step="0.01" min="0">
+                                <small class="text-muted">Current: ${{ number_format($user->wallet->withdrawal_amount ?? 0, 2) }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="locked_amount" class="form-label">Locked Amount</label>
+                                <input type="number" class="form-control" id="locked_amount" name="locked_amount" 
+                                       value="{{ $user->wallet->locked_amount ?? 0 }}" step="0.01" min="0">
+                                <small class="text-muted">Current: ${{ number_format($user->wallet->locked_amount ?? 0, 2) }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Reason (Required)</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="3" 
+                                  placeholder="Enter reason for updating wallet balances..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Update Wallet</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

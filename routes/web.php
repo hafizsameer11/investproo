@@ -10,7 +10,6 @@ use App\Http\Controllers\Admin\LoyaltyController as AdminLoyaltyController;
 use App\Http\Controllers\Admin\RewardsController;
 use App\Http\Controllers\Admin\ActiveInvestmentsController;
 use App\Http\Controllers\Admin\MiningSessionsController;
-use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DepositeController;
 use App\Http\Controllers\Api\TransactionController;
@@ -40,6 +39,7 @@ Route::get('/user-page', [UserController::class, 'user_page'])->name('users');
 Route::delete('/deleteUser/{id}', [UserController::class, 'deleteUser'])->name('destroy.user');
 Route::get('/user/{id}/detail', [UserController::class, 'userDetail'])->name('user.detail');
 Route::get('/admin/users/{id}', [UserController::class, 'userDetail'])->name('admin.user.detail');
+Route::post('/admin/users/{id}/update-wallet', [UserController::class, 'updateWallet'])->name('admin.user.update-wallet');
 // deposite
 Route::get('/deposit', [DepositeController::class, 'index'])->name('deposits');
 Route::get('/update/{depositId}', [DepositeController::class, 'update'])->name('deposits.verify');
@@ -111,13 +111,6 @@ Route::post('/mining-sessions/{id}/activate', [MiningSessionsController::class, 
 Route::post('/mining-sessions/{id}/deactivate', [MiningSessionsController::class, 'deactivateSession'])->name('mining-sessions.deactivate');
 Route::get('/mining-sessions/stats', [MiningSessionsController::class, 'getSessionStats'])->name('mining-sessions.stats');
 
-// User management - help users claim amounts and update wallets
-Route::get('/user-management', [UserManagementController::class, 'index'])->name('user-management.index');
-Route::post('/user-management/{userId}/help-claim', [UserManagementController::class, 'helpClaimAmount'])->name('user-management.help-claim');
-Route::post('/user-management/{userId}/update-wallet', [UserManagementController::class, 'updateWallet'])->name('user-management.update-wallet');
-Route::get('/user-management/{userId}/claimable-amounts', [UserManagementController::class, 'getUserClaimableAmounts'])->name('user-management.claimable-amounts');
-Route::post('/user-management/{userId}/force-claim-mining', [UserManagementController::class, 'forceClaimMiningRewards'])->name('user-management.force-claim-mining');
-Route::get('/user-management/{userId}/mining-sessions', [UserManagementController::class, 'getUserMiningSessions'])->name('user-management.mining-sessions');
 });
 
   Route::get('/news', [NewsController::class, 'index'])->name('news.index');

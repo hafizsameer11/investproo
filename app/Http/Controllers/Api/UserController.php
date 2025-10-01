@@ -416,6 +416,75 @@ class UserController extends Controller
         // $user->load(['wallet', 'deposits', 'withdrawals', 'investments']);
         return view('admin.pages.user-detail', compact('user', 'referrals'));
     }
+
+    // Update user wallet
+    public function updateWallet(Request $request, $userId)
+    {
+        $request->validate([
+            'deposit_amount' => 'nullable|numeric|min:0',
+            'profit_amount' => 'nullable|numeric|min:0',
+            'referral_amount' => 'nullable|numeric|min:0',
+            'bonus_amount' => 'nullable|numeric|min:0',
+            'withdrawal_amount' => 'nullable|numeric|min:0',
+            'locked_amount' => 'nullable|numeric|min:0',
+            'reason' => 'nullable|string|max:255'
+        ]);
+
+        $user = User::findOrFail($userId);
+        $wallet = $user->wallet;
+
+        if (!$wallet) {
+            $wallet = Wallet::create([
+                'user_id' => $user->id,
+                'status' => 'active'
+            ]);
+        }
+
+        DB::beginTransaction();
+        try {
+            $oldValues = $wallet->toArray();
+            $changes = [];
+
+            // Update each field if provided
+            $fields = ['deposit_amount', 'profit_amount', 'referral_amount', 'bonus_amount', 'withdrawal_amount', 'locked_amount'];
+            
+            foreach ($fields as $field) {
+                if ($request->has($field) && $request->$field !== null) {
+                    $oldValue = $wallet->$field ?? 0;
+                    $newValue = $request->$field;
+                    
+                    if ($oldValue != $newValue) {
+                        $wallet->$field = $newValue;
+                        $changes[$field] = [
+                            'old' => $oldValue,
+                            'new' => $newValue
+                        ];
+                    }
+                }
+            }
+
+            $wallet->save();
+
+            // Log each change
+            foreach ($changes as $field => $change) {
+                \App\Models\AdminEdit::create([
+                    'admin_id' => Auth::id(),
+                    'user_id' => $userId,
+                    'field_name' => $field,
+                    'old_value' => $change['old'],
+                    'new_value' => $change['new'],
+                    'edit_type' => 'wallet_update',
+                    'reason' => $request->reason ?? 'Admin updated wallet balance'
+                ]);
+            }
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Wallet balances updated successfully');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Failed to update wallet: ' . $e->getMessage());
+        }
+    }
     public function getUserReferrals(User $user, $maxDepth = 5)
 {
     $referrals = collect(); // Flat collection of all referrals
