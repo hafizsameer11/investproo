@@ -1,8 +1,6 @@
-@extends('admin.layouts.app')
-
-@section('title', 'User Management')
-
-@section('content')
+@include('admin.head')
+@include('admin.sidebar')
+@include('admin.navbar')
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -492,4 +490,4 @@ document.getElementById('updateWalletForm').addEventListener('submit', function(
     });
 });
 </script>
-@endsection
+@include('admin.footer')
