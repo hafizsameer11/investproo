@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WithdrawalController;
 use App\Http\Controllers\Api\LoyaltyController;
+use App\Http\Controllers\Api\LoyaltyBoostController;
 use App\Http\Controllers\Api\PasswordResetController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -140,3 +141,6 @@ Route::post('/loyalty/tiers', [LoyaltyController::class, 'store'])->middleware('
 Route::put('/loyalty/tiers/{id}', [LoyaltyController::class, 'update'])->middleware('auth:sanctum');
 Route::delete('/loyalty/tiers/{id}', [LoyaltyController::class, 'destroy'])->middleware('auth:sanctum');
 Route::get('/loyalty/tiers/{id}', [LoyaltyController::class, 'show'])->middleware('auth:sanctum');
+
+// Loyalty Boost routes
+Route::get('/loyalty-boost', [LoyaltyBoostController::class, 'getLoyaltyBoost'])->middleware('auth:sanctum');
