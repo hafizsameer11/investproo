@@ -120,6 +120,10 @@ public function calculateLoyaltyDays()
     
     return $startDate->diffInDays($endDate);
 }
+public function claimedAmounts()
+{
+    return $this->hasMany(ClaimedAmount::class);
+}
 
 public function getNextLoyaltyTier()
 {

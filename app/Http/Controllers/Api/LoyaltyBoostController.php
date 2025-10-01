@@ -40,29 +40,30 @@ class LoyaltyBoostController extends Controller
             $investmentEndDate = Carbon::parse($latestInvestment->end_date);
             $currentDate = Carbon::now();
             
-            // Calculate days invested
-            $daysInvested = $currentDate->diffInDays($investmentStartDate);
-            $daysRemaining = $currentDate->diffInDays($investmentEndDate, false);
+            // Calculate days invested (ensure positive value)
+            $daysInvested = max(0, $investmentStartDate->diffInDays($currentDate));
+            $daysRemaining = max(0, $currentDate->diffInDays($investmentEndDate, false));
             
             // Check if user has been invested for at least 30 days
             $has30DaysInvestment = $daysInvested >= 30;
             
             // Calculate loyalty boost (15% if invested for 30+ days)
-            $loyaltyBoost = $has30DaysInvestment ? 0.15 : 0;
+            $loyaltyBoostPercentage = $has30DaysInvestment ? 15 : 0;
             
             // Calculate penalty (50% of profit if withdrawing before completion)
             $penaltyAmount = 0;
             $canWithdrawWithoutPenalty = $daysRemaining <= 0; // Can withdraw without penalty only after completion
             
             if (!$canWithdrawWithoutPenalty) {
-                // Calculate 50% penalty of expected profit
-                $expectedProfit = $latestInvestment->expected_return ?? 0;
-                $penaltyAmount = $expectedProfit * 0.5;
+                // Calculate 50% penalty of current profit amount from wallet
+                $userWallet = \App\Models\Wallet::where('user_id', $userId)->first();
+                $currentProfit = $userWallet ? $userWallet->profit_amount : 0;
+                $penaltyAmount = $currentProfit * 0.5;
             }
             
             // Check if loyalty bonus is available (30+ days invested and not withdrawn recently)
             $lastWithdrawal = \App\Models\Withdrawal::where('user_id', $userId)
-                ->where('status', 'active')
+                ->whereIn('status', ['active', 'pending'])
                 ->where('created_at', '>=', $currentDate->subDays(30))
                 ->first();
             
@@ -76,8 +77,8 @@ class LoyaltyBoostController extends Controller
                 'investment_end_date' => $latestInvestment->end_date,
                 'days_invested' => $daysInvested,
                 'days_remaining' => max(0, $daysRemaining),
-                'loyalty_boost' => $loyaltyBoost,
-                'loyalty_boost_percentage' => $loyaltyBoost * 100,
+                'loyalty_boost' => $loyaltyBoostPercentage,
+                'loyalty_boost_percentage' => $loyaltyBoostPercentage,
                 'penalty_amount' => $penaltyAmount,
                 'penalty_percentage' => 50,
                 'can_withdraw_without_penalty' => $canWithdrawWithoutPenalty,
