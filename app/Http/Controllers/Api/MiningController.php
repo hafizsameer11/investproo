@@ -257,7 +257,7 @@ public function status()
                 ->where('status', 'active')
                 ->orWhere('status', 'completed')
                 ->where('rewards_claimed', false)
-                ->orderBy('started_at') // oldest first, if multiple completed
+                ->orderBy('started_at','desc') // oldest first, if multiple completed
                 ->first();
 Log::info("session for user $user->email", [$session]);
             if (!$session) {
