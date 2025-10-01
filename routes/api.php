@@ -111,6 +111,8 @@ Route::get('/single-transaction', [TransactionController::class, 'userTransactio
 Route::get('/all-transaction', [TransactionController::class, 'allTransactions'])->middleware('auth:sanctum');
 
 Route::get('/investment', [InvestmentController::class, 'investment'])->middleware('auth:sanctum');
+Route::post('/investment/create', [InvestmentController::class, 'createInvestment'])->middleware('auth:sanctum');
+Route::post('/investment/{id}/cancel', [InvestmentController::class, 'cancelInvestment'])->middleware('auth:sanctum');
 
 // User deposit and withdrawal history
 Route::get('/user-deposits', [DepositeController::class, 'userDeposits'])->middleware('auth:sanctum');

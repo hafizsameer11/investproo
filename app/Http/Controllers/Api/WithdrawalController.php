@@ -8,10 +8,12 @@ use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Models\Withdrawal;
 use App\Services\OtpService;
+use App\Services\WalletOps;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
 class WithdrawalController extends Controller
@@ -39,6 +41,11 @@ class WithdrawalController extends Controller
                 return ResponseHelper::error('User not authenticated', 401);
             }
 
+            // Verify password
+            if (!Hash::check($data['password'], $user->password)) {
+                return ResponseHelper::error('Invalid password', 422);
+            }
+
             // Verify OTP
             $otpResult = $this->otpService->verifyOtp($user->email, $data['otp'], 'withdrawal');
             if (!$otpResult['success']) {
@@ -51,11 +58,11 @@ class WithdrawalController extends Controller
                 return ResponseHelper::error('Wallet not found', 422);
             }
 
-            // Calculate total available balance
-            $totalBalance = ($wallet->deposit_amount ?? 0) + ($wallet->profit_amount ?? 0) + ($wallet->bonus_amount ?? 0) + ($wallet->referral_amount ?? 0);
+            // Calculate available balance (excluding locked amounts)
+            $availableBalance = $wallet->total_balance - $wallet->locked_amount;
             
-            if ($totalBalance < $data['amount']) {
-                return ResponseHelper::error('Insufficient balance for withdrawal. Available: $' . number_format($totalBalance, 2), 422);
+            if ($availableBalance < $data['amount']) {
+                return ResponseHelper::error('Insufficient balance for withdrawal. Available: $' . number_format($availableBalance, 2), 422);
             }
 
             // Create withdrawal record
@@ -69,7 +76,9 @@ class WithdrawalController extends Controller
             ];
 
             $withdrawal = Withdrawal::create($withdrawalData);
-            $wallet=Wallet::where('user_id', $user->id)->decrement('deposit_amount', $data['amount']); 
+            
+            // Use WalletOps to debit amount with priority
+            $breakdown = WalletOps::debitByPriority($wallet, $data['amount']); 
             // --- Track loyalty: Update last withdrawal date and calculate loyalty bonus ---
             $user->update(['last_withdrawal_date' => Carbon::now()]);
             
@@ -118,26 +127,68 @@ class WithdrawalController extends Controller
         }
     }
 
-    public function update(Request $request, $withdrawalId)
+    public function approve(Request $request, $withdrawalId)
     {
-        try
-       { 
-         Withdrawal::where('id', $withdrawalId)->update([
-        'status' => 'active',
-        'withdrawal_date' => now(),
-    ]);
-        $data['status'] = 'active';
-        $data['withdrawal_date'] = Carbon::now(); 
-        $detail = Withdrawal::find($withdrawalId);
-        $wallet = Wallet::where('user_id', $detail['user_id'])->update([
-            'withdrawal_amount' => $detail['amount'],
-        ]);
-      $transactions=Transaction::where('withdrawal_id', $withdrawalId)->update([
-        'status' => 'completed',
-    ]);
-         return redirect()->back()->with('success', 'Withdrawal approved successfully.');
-    } catch (Exception $ex) {
-            return ResponseHelper::error('Not approved the  withdrawal' . $ex);
+        try {
+            $withdrawal = Withdrawal::find($withdrawalId);
+            if (!$withdrawal) {
+                return ResponseHelper::error('Withdrawal not found', 404);
+            }
+
+            if ($withdrawal->status !== 'pending') {
+                return ResponseHelper::error('Withdrawal is not pending', 422);
+            }
+
+            $withdrawal->update([
+                'status' => 'active',
+                'withdrawal_date' => now(),
+            ]);
+
+            $wallet = Wallet::where('user_id', $withdrawal->user_id)->first();
+            if ($wallet) {
+                $wallet->withdrawal_amount += $withdrawal->amount;
+                $wallet->save();
+            }
+
+            Transaction::where('withdrawal_id', $withdrawalId)->update([
+                'status' => 'completed',
+            ]);
+
+            return ResponseHelper::success($withdrawal, 'Withdrawal approved successfully');
+        } catch (Exception $ex) {
+            return ResponseHelper::error('Failed to approve withdrawal: ' . $ex->getMessage());
+        }
+    }
+
+    public function reject(Request $request, $withdrawalId)
+    {
+        try {
+            $withdrawal = Withdrawal::find($withdrawalId);
+            if (!$withdrawal) {
+                return ResponseHelper::error('Withdrawal not found', 404);
+            }
+
+            if ($withdrawal->status !== 'pending') {
+                return ResponseHelper::error('Withdrawal is not pending', 422);
+            }
+
+            $withdrawal->update([
+                'status' => 'rejected',
+            ]);
+
+            // Refund the deducted amount back to wallet
+            $wallet = Wallet::where('user_id', $withdrawal->user_id)->first();
+            if ($wallet) {
+                WalletOps::refundToBucket($wallet, $withdrawal->amount, 'deposit_amount');
+            }
+
+            Transaction::where('withdrawal_id', $withdrawalId)->update([
+                'status' => 'failed',
+            ]);
+
+            return ResponseHelper::success($withdrawal, 'Withdrawal rejected and amount refunded');
+        } catch (Exception $ex) {
+            return ResponseHelper::error('Failed to reject withdrawal: ' . $ex->getMessage());
         }
     }
 

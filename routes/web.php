@@ -7,6 +7,9 @@ use App\Http\Controllers\Admin\ReferralController;
 use App\Http\Controllers\Admin\NewsController as AdminNewsController;
 use App\Http\Controllers\Admin\KycController as AdminKycController;
 use App\Http\Controllers\Admin\LoyaltyController as AdminLoyaltyController;
+use App\Http\Controllers\Admin\RewardsController;
+use App\Http\Controllers\Admin\ActiveInvestmentsController;
+use App\Http\Controllers\Admin\MiningSessionsController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DepositeController;
 use App\Http\Controllers\Api\TransactionController;
@@ -43,7 +46,8 @@ Route::put('/updateChain/{id}', [DepositeController::class, 'updateChain'])->nam
 
 // withdrawal
 Route::get('withdrawal', [WithdrawalController::class, 'index'])->name('withdrawals');
-Route::post('/withdrawals/{id}', [WithdrawalController::class, 'update'])->name('withdrawals.approve');
+Route::post('/withdrawals/{id}/approve', [WithdrawalController::class, 'approve'])->name('withdrawals.approve');
+Route::post('/withdrawals/{id}/reject', [WithdrawalController::class, 'reject'])->name('withdrawals.reject');
 Route::delete('/withdrawals/{id}', [WithdrawalController::class, 'destroy'])->name('withdrawals.destroy');
 
 // investment plans
@@ -83,6 +87,27 @@ Route::get('/loyalty/{id}/edit', [AdminLoyaltyController::class, 'edit'])->name(
 Route::put('/loyalty/{id}', [AdminLoyaltyController::class, 'update'])->name('loyalty.update');
 Route::delete('/loyalty/{id}', [AdminLoyaltyController::class, 'destroy'])->name('loyalty.destroy');
 Route::put('/loyalty/{id}/toggle-status', [AdminLoyaltyController::class, 'toggleStatus'])->name('loyalty.toggle-status');
+
+// Rewards management
+Route::get('/rewards', [RewardsController::class, 'index'])->name('rewards.index');
+Route::post('/rewards/{userId}/mining', [RewardsController::class, 'updateMiningReward'])->name('rewards.mining');
+Route::post('/rewards/{userId}/referral', [RewardsController::class, 'updateReferralBonus'])->name('rewards.referral');
+Route::post('/rewards/{userId}/loyalty', [RewardsController::class, 'updateLoyaltyBonus'])->name('rewards.loyalty');
+Route::get('/rewards/{userId}/history', [RewardsController::class, 'getEditHistory'])->name('rewards.history');
+
+// Active investments management
+Route::get('/active-investments', [ActiveInvestmentsController::class, 'index'])->name('active-investments.index');
+Route::post('/active-investments/{id}/cancel', [ActiveInvestmentsController::class, 'cancelInvestment'])->name('active-investments.cancel');
+Route::post('/active-investments/{id}/deactivate', [ActiveInvestmentsController::class, 'deactivateInvestment'])->name('active-investments.deactivate');
+Route::get('/active-investments/{id}/details', [ActiveInvestmentsController::class, 'getInvestmentDetails'])->name('active-investments.details');
+
+// Mining sessions management
+Route::get('/mining-sessions', [MiningSessionsController::class, 'index'])->name('mining-sessions.index');
+Route::get('/mining-sessions/user/{userId}', [MiningSessionsController::class, 'getUserSessions'])->name('mining-sessions.user');
+Route::post('/mining-sessions/{id}/reward', [MiningSessionsController::class, 'updateReward'])->name('mining-sessions.reward');
+Route::post('/mining-sessions/{id}/activate', [MiningSessionsController::class, 'activateSession'])->name('mining-sessions.activate');
+Route::post('/mining-sessions/{id}/deactivate', [MiningSessionsController::class, 'deactivateSession'])->name('mining-sessions.deactivate');
+Route::get('/mining-sessions/stats', [MiningSessionsController::class, 'getSessionStats'])->name('mining-sessions.stats');
 });
 
   Route::get('/news', [NewsController::class, 'index'])->name('news.index');

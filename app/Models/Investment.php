@@ -94,4 +94,28 @@ class Investment extends Model
     }
 }
 
+  public function cancel()
+  {
+    if ($this->status !== 'active') {
+      return false;
+    }
+
+    $this->status = 'canceled';
+    $this->end_date = now();
+    $this->save();
+
+    // Unlock funds and refund to deposit_amount
+    $wallet = $this->user->wallet;
+    if ($wallet) {
+      $wallet->locked_amount -= $this->amount;
+      if ($wallet->locked_amount < 0) {
+        $wallet->locked_amount = 0;
+      }
+      $wallet->deposit_amount += $this->amount;
+      $wallet->save();
+    }
+
+    return true;
+  }
+
 }
