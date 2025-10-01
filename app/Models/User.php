@@ -122,7 +122,7 @@ public function calculateLoyaltyDays()
 }
 public function claimedAmounts()
 {
-    return $this->hasMany(ClaimedAmount::class);
+    return $this->hasMany(\App\Models\ClaimedAmount::class);
 }
 
 public function getNextLoyaltyTier()
