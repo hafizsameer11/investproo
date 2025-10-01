@@ -27,7 +27,7 @@ class DepositeController extends Controller
      * Default referral percentages per level.
      * Move to config('referrals.levels') if you want runtime control.
      */
-    private array $referralPercentages = [
+   private array $referralPercentages = [
         1 => 0.10, // 10%
         2 => 0.07, // 7%
         3 => 0.05, // 5%
@@ -35,13 +35,16 @@ class DepositeController extends Controller
         5 => 0.02, // 2%
     ];
 
+    /**
+     * User submits deposit request
+     */
     public function store(DepositRequest $request)
     {
         try {
             $data = $request->validated();
             $user = Auth::user();
 
-            // Handle image upload
+            // handle proof picture
             if (isset($data['deposit_picture']) && $data['deposit_picture'] instanceof \Illuminate\Http\UploadedFile) {
                 $img = $data['deposit_picture'];
                 $ext = $img->getClientOriginalExtension();
@@ -58,7 +61,7 @@ class DepositeController extends Controller
             $data['investment_plan_id'] = null;
 
             $chainId = $data['chain_id'] ?? null;
-            $chainDetails = $chainId ? Chain::where('id', $chainId)->get() : null;
+            $chainDetails = $chainId ? Chain::where('id', $chainId)->first() : null;
 
             $deposit = Deposit::create($data);
 
@@ -76,7 +79,7 @@ class DepositeController extends Controller
     }
 
     /**
-     * Activate plan using wallet balance and trigger referral payouts.
+     * User activates a plan
      */
     public function activatePlan(Request $request, string $planId)
     {
@@ -91,22 +94,21 @@ class DepositeController extends Controller
             if (!$user) {
                 return ResponseHelper::error('User not authenticated', 401);
             }
-            $actualUser = User::find($user->id);
-            $actualUser->first_investment_date = Carbon::now();
-            // $actualUser->loyalty_days = 0;
-            $actualUser->save();
+
+            // Lock wallet row
+            $wallet = Wallet::where('user_id', $user->id)->lockForUpdate()->first();
+            if (!$wallet) {
+                return ResponseHelper::error('Wallet not found', 422);
+            }
+
+            // Prevent duplicate active plan
             $alreadyActivePlan = Investment::where('user_id', $user->id)
                 ->where('status', 'active')
                 ->lockForUpdate()
                 ->first();
+
             if ($alreadyActivePlan) {
                 return ResponseHelper::error('You already have an active plan', 400);
-            }
-
-            // Lock investor wallet row while we compute/deduct
-            $wallet = Wallet::where('user_id', $user->id)->lockForUpdate()->first();
-            if (!$wallet) {
-                return ResponseHelper::error('Wallet not found', 422);
             }
 
             $plan = InvestmentPlan::find($planId);
@@ -114,44 +116,28 @@ class DepositeController extends Controller
                 return ResponseHelper::error('Investment plan not found', 404);
             }
 
-            // --- Balance checks ---
-            $totalBalance = ($wallet->deposit_amount ?? 0)
-                + ($wallet->withdrawal_amount ?? 0)
-                + ($wallet->profit_amount ?? 0)
-                + ($wallet->bonus_amount ?? 0)
-                + ($wallet->referral_amount ?? 0);
+            $deductedAmount = (float) $data['amount'];
 
-            if ($totalBalance < $data['amount']) {
-                return ResponseHelper::error('Insufficient balance. Please deposit first.', 400);
+            // ✅ Check available balance = total_balance - locked_amount
+            $availableBalance = $wallet->total_balance - $wallet->locked_amount;
+
+            if ($availableBalance < $deductedAmount) {
+                return ResponseHelper::error('Insufficient available balance. Please deposit first.', 400);
             }
 
-            if ($data['amount'] < $plan->min_amount) {
+            if ($deductedAmount < $plan->min_amount) {
                 return ResponseHelper::error("Minimum amount for this plan is $" . $plan->min_amount, 400);
             }
 
-            if ($data['amount'] > $plan->max_amount) {
+            if ($deductedAmount > $plan->max_amount) {
                 return ResponseHelper::error("Maximum amount for this plan is $" . $plan->max_amount, 400);
             }
 
-            // --- Deduct in a deterministic order ---
-            $deductedAmount   = (float) $data['amount'];
-            $remainingToDeduct = $deductedAmount;
-
-            $take = function (float $from) use (&$remainingToDeduct): float {
-                $use = min($from, $remainingToDeduct);
-                $remainingToDeduct -= $use;
-                return $from - $use;
-            };
-
-            // $wallet->deposit_amount    = $take($wallet->deposit_amount ?? 0);
-            $wallet->withdrawal_amount = $take($wallet->withdrawal_amount ?? 0);
-            $wallet->profit_amount     = $take($wallet->profit_amount ?? 0);
-            $wallet->bonus_amount      = $take($wallet->bonus_amount ?? 0);
-            $wallet->referral_amount   = $take($wallet->referral_amount ?? 0);
+            // ✅ Lock funds instead of reducing total_balance
+            $wallet->locked_amount += $deductedAmount;
             $wallet->save();
 
-            // --- Create investment ---
-            // NOTE: your schema used $plan->duration_days earlier; if your column is "duration" in days or months, adjust this line accordingly.
+            // Create investment
             $investment = Investment::create([
                 'user_id'             => $user->id,
                 'investment_plan_id'  => $plan->id,
@@ -161,23 +147,22 @@ class DepositeController extends Controller
                 'status'              => 'active',
             ]);
 
-            // --- Track loyalty: Set first investment date if not set ---
-            if (!$user->first_investment_date) {
-                $user->update(['first_investment_date' => Carbon::now()]);
-            }
-
-            // --- Investor-side transaction (self) ---
+            // Transaction log
             Transaction::create([
-                'user_id'      => $user->id,              // owner (investor)
+                'user_id'      => $user->id,
                 'type'         => 'investment',
                 'amount'       => $deductedAmount,
                 'status'       => 'completed',
                 'description'  => "Activated {$plan->plan_name}",
-                'reference_id' => $user->id,              // counterparty = self (investor)
+                'reference_id' => $investment->id,
             ]);
 
-            // --- Referral payouts: create transactions for recipients (parents) ---
-            $referralReport = $this->payReferralTree($user, $deductedAmount, $plan);
+            // ✅ Referral payout only for first-time investor
+            if (!$wallet->is_invested) {
+                $this->payReferralTree($user, $deductedAmount, $plan);
+                $wallet->is_invested = true;
+                $wallet->save();
+            }
 
             DB::commit();
 
@@ -185,8 +170,8 @@ class DepositeController extends Controller
                 'investment'        => $investment,
                 'plan'              => $plan,
                 'amount_invested'   => $deductedAmount,
-                'remaining_balance' => $totalBalance - $deductedAmount,
-                'referral_payouts'  => $referralReport, // helpful for UI/debug
+                'available_balance' => $wallet->total_balance - $wallet->locked_amount,
+                'locked_amount'     => $wallet->locked_amount,
             ];
 
             return ResponseHelper::success($response, 'Plan activated successfully!');
@@ -196,114 +181,66 @@ class DepositeController extends Controller
             return ResponseHelper::error('Plan activation failed: ' . $ex->getMessage());
         }
     }
+
     /**
-     * Pays the referral tree (up to 5 levels), creates a transaction for each recipient,
-     * and updates their wallet.referral_amount.
-     * - reference_id = investing user id (counterparty)
-     * - user_id      = recipient id (who receives money)
-     *
-     * @return array<int,array<string,mixed>>
+     * Referral payout (only triggered on first investment)
      */
     protected function payReferralTree(User $investor, float $investmentAmount, $plan): array
     {
-        $percentages = [
-            1 => 0.10,
-            2 => 0.07,
-            3 => 0.05,
-            4 => 0.03,
-            5 => 0.02,
-        ];
+        $report = [];
+        $level = 1;
+        $nextCode = $investor->referral_code;
+        $visited = [];
 
-        return DB::transaction(function () use ($investor, $investmentAmount, $plan, $percentages) {
-            $level    = 1;
-            $report   = [];
-            $nextCode = $investor->referral_code; // parent user_code
-            $visited  = []; // guard against cycles
+        while ($level <= 5 && !empty($nextCode)) {
+            if (isset($visited[$nextCode])) break; // prevent loops
+            $visited[$nextCode] = true;
 
-            while ($level <= 5 && !empty($nextCode)) {
+            $referrer = User::where('user_code', $nextCode)->lockForUpdate()->first();
+            if (!$referrer) break;
 
-                // Cycle / self guard
-                if (isset($visited[$nextCode])) {
-                    Log::warning("Referral cycle detected at code {$nextCode} (level {$level}). Aborting.");
-                    break;
-                }
-                $visited[$nextCode] = true;
+            $refWallet = Wallet::firstOrCreate(['user_id' => $referrer->id], [
+                'deposit_amount' => 0,
+                'withdrawal_amount' => 0,
+                'profit_amount' => 0,
+                'bonus_amount' => 0,
+                'referral_amount' => 0,
+                'total_balance' => 0,
+                'locked_amount' => 0,
+                'is_invested' => false,
+                'status' => 'active',
+            ]);
 
-                // Lock the referrer row
-                $referrer = User::where('user_code', $nextCode)->lockForUpdate()->first();
+            $percentage = $this->referralPercentages[$level] ?? 0;
+            $bonus = round($investmentAmount * $percentage, 2);
 
-                if (!$referrer) {
-                    Log::info("Referral tree break: no referrer for code {$nextCode} at level {$level}");
-                    break;
-                }
+            if ($bonus > 0) {
+                $refWallet->referral_amount += $bonus;
+                $refWallet->save();
 
-                // Lock the referrer wallet (create if needed later)
-                $refWallet = Wallet::where('user_id', $referrer->id)->lockForUpdate()->first();
+                Transaction::create([
+                    'user_id'      => $referrer->id,
+                    'type'         => 'referral',
+                    'amount'       => $bonus,
+                    'status'       => 'completed',
+                    'description'  => "Referral bonus (L{$level}) from {$investor->name} on {$plan->plan_name}",
+                    'reference_id' => $investor->id,
+                ]);
 
-                // Your skip rule: only pay people with deposit_amount >= 1
-                $hasEligibleDeposit = $refWallet && ($refWallet->deposit_amount ?? 0) >= 1;
-
-                if (!$hasEligibleDeposit) {
-                    // advance up the tree and level, then continue
-                    $nextCode = $referrer->referral_code;
-                    $level++;
-                    continue; // SAFE: we advanced pointers
-                }
-
-                $percentage = $percentages[$level] ?? 0;
-                if ($percentage > 0) {
-                    $bonus = round($investmentAmount * $percentage, 2);
-
-                    if ($bonus > 0) {
-                        // Ensure wallet exists if it didn't
-                        if (!$refWallet) {
-                            $refWallet = Wallet::create([
-                                'user_id'            => $referrer->id,
-                                'deposit_amount'     => 0,
-                                'withdrawal_amount'  => 0,
-                                'profit_amount'      => 0,
-                                'bonus_amount'       => 0,
-                                'referral_amount'    => 0,
-                                'status'             => 'active',
-                            ]);
-                            // Lock it right after creation to be consistent
-                            $refWallet->refresh();
-                            $refWallet = Wallet::where('id', $refWallet->id)->lockForUpdate()->first();
-                        }
-
-                        // Credit referral balance
-                        $refWallet->referral_amount = ($refWallet->referral_amount ?? 0) + $bonus;
-                        $refWallet->save();
-
-                        // Recipient-side transaction record
-                        Transaction::create([
-                            'user_id'      => $referrer->id,
-                            'type'         => 'referral',
-                            'amount'       => $bonus,
-                            'status'       => 'completed',
-                            'description'  => "Referral bonus (L{$level}) from {$investor->name} on {$plan->plan_name}",
-                            'reference_id' => $investor->id,
-                        ]);
-
-                        $report[] = [
-                            'level'          => $level,
-                            'recipient_id'   => $referrer->id,
-                            'recipient_code' => $referrer->user_code,
-                            'bonus'          => $bonus,
-                        ];
-                    }
-                }
-
-                // Move up the tree
-                $nextCode = $referrer->referral_code;
-                $level++;
+                $report[] = [
+                    'level' => $level,
+                    'recipient_id' => $referrer->id,
+                    'recipient_code' => $referrer->user_code,
+                    'bonus' => $bonus,
+                ];
             }
 
-            return $report;
-        });
+            $nextCode = $referrer->referral_code;
+            $level++;
+        }
+
+        return $report;
     }
-
-
     /**
      * Pay referral bonuses up to 5 levels above the investing user.
      * Uses: parent = User where user_code == child.referral_code

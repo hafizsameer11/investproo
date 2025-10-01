@@ -15,7 +15,8 @@ class Wallet extends Model
     'referral_amount',
     'status',
     'total_balance',
-    'is_invested'
+    'is_invested',
+     'locked_amount'
 ];
 protected static function booted()
     {
