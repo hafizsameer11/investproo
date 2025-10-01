@@ -267,6 +267,7 @@ Log::info("session for user $user->email", [$session]);
 
             // Get the investment tied to the session (ensures exact plan used when started)
             $investment = Investment::with('investmentPlan')->find($session->investment_id);
+            Log::info("investment for user $user->email", [$investment]);
 
             if (!$investment || !$investment->investmentPlan) {
                 return ResponseHelper::error('Linked investment/plan not found for this session', 422);
