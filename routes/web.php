@@ -39,6 +39,7 @@ Route::get('/kyc/{user_id}', [UserController::class, 'kyc'])->name('kyc');
 Route::get('/user-page', [UserController::class, 'user_page'])->name('users');
 Route::delete('/deleteUser/{id}', [UserController::class, 'deleteUser'])->name('destroy.user');
 Route::get('/user/{id}/detail', [UserController::class, 'userDetail'])->name('user.detail');
+Route::get('/admin/users/{id}', [UserController::class, 'userDetail'])->name('admin.user.detail');
 // deposite
 Route::get('/deposit', [DepositeController::class, 'index'])->name('deposits');
 Route::get('/update/{depositId}', [DepositeController::class, 'update'])->name('deposits.verify');

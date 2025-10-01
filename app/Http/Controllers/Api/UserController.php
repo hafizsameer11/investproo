@@ -369,6 +369,7 @@ class UserController extends Controller
         return view('admin.pages.users', compact('all_users', 'total_users', 'active_users', 'inactive_user'));
     }
 
+
     public function showLoginForm()
     {
         return view('admin.login');
@@ -406,7 +407,7 @@ class UserController extends Controller
 
     public function userDetail($id)
     {
-        $user = User::with(['wallet', 'deposits', 'withdrawals', 'investments'])->find($id);
+        $user = User::with(['wallet', 'deposits', 'withdrawals', 'investments', 'claimedAmounts'])->find($id);
         // $referral = User::where('referral_code', $user->referral_id)->first();
         $referrals = $this->getUserReferrals($user, 5);
         if (!$user) {
