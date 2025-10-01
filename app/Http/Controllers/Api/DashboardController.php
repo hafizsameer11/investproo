@@ -66,6 +66,7 @@ public function dashboard()
                 ->where('investment_id', $latestInvestment->id)
                 ->whereDate('created_at', Carbon::today())
                 ->sum('amount');
+                Log::info("todaysProfit for user $userId with investment id $latestInvestment->id", [$todaysProfit]);
 
             $totalProfitEarned = (float) ClaimedAmount::where('user_id', $userId)
                 ->where('investment_id', $latestInvestment->id)
