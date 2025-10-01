@@ -178,40 +178,63 @@ class UserController extends Controller
         }
     }
     // login
-    public function login(Request $request)
-    {
-        try {
-            $user = $request->validate([
-                'email' => 'required|email',
-                'password' => 'required',
-                'otp' => 'required|string|size:6'
-            ]);
+  public function login(Request $request)
+{
+    try {
+        $data = $request->validate([
+            'email'    => 'required|email',
+            'password' => 'required',
+            'otp'      => 'required|string|size:6',
+        ]);
 
-            // First verify OTP
-            $otpResult = $this->otpService->verifyOtp($user['email'], $user['otp'], 'login');
-            if (!$otpResult['success']) {
-                return ResponseHelper::error($otpResult['message'], 422);
-            }
-
-            // Then attempt login
-            if (Auth::attempt(['email' => $user['email'], 'password' => $user['password']])) {
-                $authUser = Auth::user();
-                $token = $authUser->createToken("API Token")->plainTextToken;
-
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Login Successfully',
-                    'token_type' => 'bearer',
-                    'token' => $token,
-                    'user' => $authUser,
-                ], 200);
-            } else {
-                return ResponseHelper::error('Invalid credentials', 401);
-            }
-        } catch (Exception $ex) {
-            return ResponseHelper::error('User is not Login: ' . $ex->getMessage());
+        // --- Step 1: Verify OTP ---
+        $otpResult = $this->otpService->verifyOtp($data['email'], $data['otp'], 'login');
+        if (!$otpResult['success']) {
+            return ResponseHelper::error([
+                'field'   => 'otp',
+                'message' => $otpResult['message']
+            ], 422);
         }
+
+        // --- Step 2: Check user existence ---
+        $user = \App\Models\User::where('email', $data['email'])->first();
+        if (!$user) {
+            return ResponseHelper::error([
+                'field'   => 'email',
+                'message' => 'No account found with this email address'
+            ], 404);
+        }
+
+        // --- Step 3: Verify password ---
+        if (!\Hash::check($data['password'], $user->password)) {
+            return ResponseHelper::error([
+                'field'   => 'password',
+                'message' => 'The password is incorrect'
+            ], 401);
+        }
+
+        // --- Step 4: Successful login ---
+        Auth::login($user);
+        $token = $user->createToken("API Token")->plainTextToken;
+
+        return response()->json([
+            'status'     => true,
+            'message'    => 'Login Successfully',
+            'token_type' => 'bearer',
+            'token'      => $token,
+            'user'       => $user,
+        ], 200);
+
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return ResponseHelper::error([
+            'field'   => $e->errors(),
+            'message' => 'Validation failed'
+        ], 422);
+    } catch (Exception $ex) {
+        return ResponseHelper::error('Login failed: ' . $ex->getMessage(), 500);
     }
+}
+
 
     // all users
     public function allUser()
