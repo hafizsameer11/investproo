@@ -38,87 +38,73 @@ public function dashboard()
                 'profit_amount'     => 0,
                 'bonus_amount'      => 0,
                 'referral_amount'   => 0,
+                'total_balance'     => 0,
+                'locked_amount'     => 0,
+                'is_invested'       => false,
                 'status'            => 'active',
             ]
         );
 
-        // Normalize numeric fields
-        $deposit   = (float) ($wallet->deposit_amount   ?? 0);
-        $profitAmt = (float) ($wallet->profit_amount    ?? 0);
-        $bonus     = (float) ($wallet->bonus_amount     ?? 0);
-        $referral  = (float) ($wallet->referral_amount  ?? 0);
-        $withdrawn = (float) ($wallet->withdrawal_amount?? 0); // informational
+        // ✅ Step 1: Get latest investment
+        $latestInvestment = Investment::where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->first();
 
-        Log::info('Wallet data for user ' . $userId . ':', [
-            'deposit_amount'    => $deposit,
-            'profit_amount'     => $profitAmt,
-            'bonus_amount'      => $bonus,
-            'referral_amount'   => $referral,
-            'withdrawal_amount' => $withdrawn,
-        ]);
+        $calculatedProfit = 0;
+        $todaysProfit = 0;
+        $totalProfitEarned = 0;
 
-        // Pending withdrawals (to reserve funds)
-        $pendingWithdrawals = (float) Withdrawal::where('user_id', $userId)
-            ->where('status', 'pending')
-            ->sum('amount');
+        if ($latestInvestment) {
+            // Check expiry + auto-complete plan
+            $latestInvestment->checkAndComplete();
 
-        // Base total = sum of credited buckets (DO NOT add estimates)
-        $total_balance_raw = $deposit + $profitAmt + $bonus + $referral;
+            // Calculate profit live
+            $calculatedProfit = $latestInvestment->total_profit;
 
-        // Available = total - pending
-        $available_balance = max(0, $total_balance_raw - $pendingWithdrawals);
+            // Claimed amounts only for this investment
+            $todaysProfit = (float) ClaimedAmount::where('user_id', $userId)
+                ->where('investment_id', $latestInvestment->id)
+                ->whereDate('created_at', Carbon::today())
+                ->sum('amount');
 
-        // Active plans count
+            $totalProfitEarned = (float) ClaimedAmount::where('user_id', $userId)
+                ->where('investment_id', $latestInvestment->id)
+                ->sum('amount');
+        }
+
+        // ✅ Step 2: Balances
+        $totalBalance   = (float) $wallet->total_balance;
+        $lockedAmount   = (float) $wallet->locked_amount;
+        $available      = max(0, $totalBalance - $lockedAmount);
+
+        $withdrawn      = (float) ($wallet->withdrawal_amount ?? 0);
+        $bonus          = (float) ($wallet->bonus_amount ?? 0);
+        $referral       = (float) ($wallet->referral_amount ?? 0);
+
+        // ✅ Step 3: Active plans count
         $activePlansCount = Investment::where('user_id', $userId)
             ->where('status', 'active')
             ->count();
 
-        // ---- PROFIT METRICS FROM CLAIMED AMOUNTS ----
-        // Today’s profit (claimed today only)
-        $todaysProfit = (float) ClaimedAmount::where('user_id', $userId)
-            ->whereDate('created_at', Carbon::today())
-            ->sum('amount');
-
-        // Lifetime claimed profit (all-time)
-        $totalProfitEarned = (float) ClaimedAmount::where('user_id', $userId)
-            ->sum('amount');
-
-        // Round for presentation (keep raw if you prefer)
-        $available_balance = round($available_balance, 2);
-        $total_balance_raw = round($total_balance_raw, 2);
-        $todaysProfit      = round($todaysProfit, 2);
-        $totalProfitEarned = round($totalProfitEarned, 2);
-        $profitAmt         = round($profitAmt, 2);
-
-        Log::info('Dashboard computed:', [
-            'available_balance'   => $available_balance,
-            'total_balance_raw'   => $total_balance_raw,
-            'pending_withdrawals' => $pendingWithdrawals,
-            'active_plans'        => $activePlansCount,
-            'todays_profit'       => $todaysProfit,
-            'profit_amount'       => $profitAmt,
-            'total_profit_earned' => $totalProfitEarned,
-        ]);
-
         return ResponseHelper::success([
-            // balances
-            'total_balance'       => $available_balance,      // spendable now (after holding pending withdrawals)
-            'total_balance_raw'   => $total_balance_raw,      // before pending reservations
-            'pending_withdrawals' => round($pendingWithdrawals, 2),
+            // Wallet balances
+            'total_balance'        => round($totalBalance, 2),       // from wallet
+            'available_balance'    => round($available, 2),          // minus locked
+            'locked_amount'        => round($lockedAmount, 2),
 
-            // plans
-            'active_plans'        => $activePlansCount,
+            // Plans
+            'active_plans'         => $activePlansCount,
 
-            // profit KPIs
-            'profit_amount'       => $profitAmt,              // current profit bucket in wallet
-            'todays_profit'       => $todaysProfit,           // claimed today via claimed_amounts
-            'total_profit_earned' => $totalProfitEarned,      // lifetime claimed via claimed_amounts
+            // Profits (only latest investment)
+            'profit_amount'        => round($calculatedProfit, 2),
+            'todays_profit'        => round($todaysProfit, 2),
+            'total_profit_earned'  => round($totalProfitEarned, 2),
 
-            // bonuses
-            'referral_bonus_earned' => round($bonus + $referral, 2),
+            // Bonuses
+            'referral_bonus_earned'=> round($bonus + $referral, 2),
 
-            // historical total withdrawn (info only)
-            'withdrawal_amount'   => round($withdrawn, 2),
+            // Withdrawals (informational)
+            'withdrawal_amount'    => round($withdrawn, 2),
         ], 'Dashboard data retrieved successfully');
 
     } catch (Exception $ex) {
@@ -126,6 +112,7 @@ public function dashboard()
         return ResponseHelper::error('Failed to load dashboard: ' . $ex->getMessage(), 500);
     }
 }
+
 
 
     public function about()

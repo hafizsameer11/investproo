@@ -17,7 +17,8 @@ class InvestmentPlan extends Model
 ];
 public function investments()
 {
-    return $this->hasMany(Deposit::class); // or Investment, depending on your model
+    return $this->hasMany(Investment::class); // ✅ must be Investment not Deposit
 }
+
 
 }

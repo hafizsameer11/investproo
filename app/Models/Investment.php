@@ -76,4 +76,22 @@ class Investment extends Model
     $dailyProfitRate = $this->investmentPlan->profit_percentage / 100;
     return $this->amount * $dailyProfitRate;
   }
+  public function checkAndComplete()
+{
+    if ($this->status === 'active' && $this->end_date && now()->gte($this->end_date)) {
+        $this->status = 'inactive';
+        $this->save();
+
+        // Unlock funds in wallet
+        $wallet = $this->user->wallet;
+        if ($wallet) {
+            $wallet->locked_amount -= $this->amount;
+            if ($wallet->locked_amount < 0) {
+                $wallet->locked_amount = 0;
+            }
+            $wallet->save();
+        }
+    }
+}
+
 }
