@@ -14,6 +14,7 @@ class Withdrawal extends Model
         'notes',
         'withdrawal_date',
         'status',
+        'rejection_reason',
     ];
 public function transactions()
 {

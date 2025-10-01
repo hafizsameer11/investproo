@@ -27,7 +27,7 @@ protected static function booted()
                 + ($wallet->profit_amount ?? 0)
                 + ($wallet->bonus_amount ?? 0)
                 + ($wallet->referral_amount ?? 0)
-                + ($wallet->locked_amount ?? 0);
+               
         });
     }
 }

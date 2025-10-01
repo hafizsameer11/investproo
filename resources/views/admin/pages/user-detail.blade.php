@@ -141,4 +141,181 @@
 
 
 
+<!-- Complete History Tables -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><strong>Complete Withdrawal History</strong></h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover table-bordered">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Crypto Type</th>
+                                <th>Wallet Address</th>
+                                <th>Request Date</th>
+                                <th>Processed Date</th>
+                                <th>Notes</th>
+                                <th>Rejection Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($user->withdrawals as $index => $withdrawal)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>${{ number_format($withdrawal->amount, 2) }}</td>
+                                    <td>
+                                        @if ($withdrawal->status === 'active')
+                                            <span class="badge bg-success">Approved</span>
+                                        @elseif ($withdrawal->status === 'rejected')
+                                            <span class="badge bg-danger">Rejected</span>
+                                        @else
+                                            <span class="badge bg-warning">Pending</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ $withdrawal->crypto_type ?? 'N/A' }}</td>
+                                    <td>{{ $withdrawal->wallet_address ?? 'N/A' }}</td>
+                                    <td>{{ $withdrawal->created_at->format('M d, Y H:i') }}</td>
+                                    <td>{{ $withdrawal->withdrawal_date ?? 'Not processed' }}</td>
+                                    <td>{{ $withdrawal->notes ?? 'No notes' }}</td>
+                                    <td>{{ $withdrawal->rejection_reason ?? 'N/A' }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="9" class="text-center">No withdrawal history found</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><strong>Complete Deposit History</strong></h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover table-bordered">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Chain</th>
+                                <th>Transaction Hash</th>
+                                <th>Request Date</th>
+                                <th>Processed Date</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($user->deposits as $index => $deposit)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>${{ number_format($deposit->amount, 2) }}</td>
+                                    <td>
+                                        @if ($deposit->status === 'approved')
+                                            <span class="badge bg-success">Approved</span>
+                                        @elseif ($deposit->status === 'rejected')
+                                            <span class="badge bg-danger">Rejected</span>
+                                        @else
+                                            <span class="badge bg-warning">Pending</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ $deposit->chain->name ?? 'N/A' }}</td>
+                                    <td>{{ $deposit->transaction_hash ?? 'N/A' }}</td>
+                                    <td>{{ $deposit->created_at->format('M d, Y H:i') }}</td>
+                                    <td>{{ $deposit->updated_at->format('M d, Y H:i') }}</td>
+                                    <td>{{ $deposit->notes ?? 'No notes' }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="text-center">No deposit history found</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><strong>Complete Investment History</strong></h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover table-bordered">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Plan Name</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Duration</th>
+                                <th>Expected Return</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($user->investments as $index => $investment)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>{{ $investment->investmentPlan->name ?? 'N/A' }}</td>
+                                    <td>${{ number_format($investment->amount, 2) }}</td>
+                                    <td>
+                                        @if ($investment->status === 'active')
+                                            <span class="badge bg-success">Active</span>
+                                        @elseif ($investment->status === 'completed')
+                                            <span class="badge bg-info">Completed</span>
+                                        @elseif ($investment->status === 'canceled')
+                                            <span class="badge bg-danger">Canceled</span>
+                                        @else
+                                            <span class="badge bg-secondary">{{ ucfirst($investment->status) }}</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ $investment->start_date ? \Carbon\Carbon::parse($investment->start_date)->format('M d, Y') : 'N/A' }}</td>
+                                    <td>{{ $investment->end_date ? \Carbon\Carbon::parse($investment->end_date)->format('M d, Y') : 'N/A' }}</td>
+                                    <td>{{ $investment->investmentPlan->duration ?? 'N/A' }} days</td>
+                                    <td>${{ number_format($investment->expected_return ?? 0, 2) }}</td>
+                                    <td>
+                                        @if ($investment->status === 'active')
+                                            <span class="text-success">Running</span>
+                                        @elseif ($investment->status === 'completed')
+                                            <span class="text-info">Completed</span>
+                                        @else
+                                            <span class="text-muted">Inactive</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="9" class="text-center">No investment history found</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @include('admin.footer')

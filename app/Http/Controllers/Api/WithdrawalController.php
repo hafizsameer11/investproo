@@ -195,10 +195,11 @@ class WithdrawalController extends Controller
     public function index()
     {
         $all_withdrawals = Withdrawal::with('user')->latest()->get();
-    $total_withdrawals = Withdrawal::count();
-    $pending_withdrawals = Withdrawal::where('status', 'pending')->count();
-    $approved_withdrawals = Withdrawal::where('status', 'active')->count();
-    return view('admin.pages.withdrawal', compact('all_withdrawals', 'total_withdrawals', 'pending_withdrawals', 'approved_withdrawals'));
+        $total_withdrawals = Withdrawal::count();
+        $pending_withdrawals = Withdrawal::where('status', 'pending')->count();
+        $approved_withdrawals = Withdrawal::where('status', 'active')->count();
+        $rejected_withdrawals = Withdrawal::where('status', 'rejected')->count();
+        return view('admin.pages.withdrawal', compact('all_withdrawals', 'total_withdrawals', 'pending_withdrawals', 'approved_withdrawals', 'rejected_withdrawals'));
     }
 
 
