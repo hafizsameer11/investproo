@@ -111,7 +111,7 @@ class Investment extends Model
       if ($wallet->locked_amount < 0) {
         $wallet->locked_amount = 0;
       }
-      $wallet->deposit_amount += $this->amount;
+      // $wallet->deposit_amount += $this->amount;
       $wallet->save();
     }
 

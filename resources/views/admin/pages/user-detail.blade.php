@@ -17,6 +17,12 @@
 
                 <p><strong>Status:</strong> {{ ucfirst($user->status) }}</p>
                 
+                @if($user->wallet)
+                <div class="alert alert-success mt-3">
+                    <h5><i class="fas fa-wallet"></i> <strong>Total Balance: ${{ number_format($user->wallet->total_balance ?? 0, 2) }}</strong></h5>
+                </div>
+                @endif
+                
                 <!-- Wallet Update Button -->
                 <div class="mt-3">
                     <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#updateWalletModal">
@@ -31,14 +37,30 @@
     <div class="row">
         <div class="col-12">
             <div class="card mb-4">
-                <div class="card-header"><strong>Wallet Information</strong></div>
+                <div class="card-header">
+                    <strong>Wallet Information</strong>
+                    <span class="badge bg-success float-end">Total: ${{ number_format($user->wallet->total_balance, 2) }}</span>
+                </div>
                 <div class="card-body">
-                    <p><strong>Deposit Amount:</strong> ${{ number_format($user->wallet->deposit_amount, 2) }}</p>
-                    <p><strong>Withdrawal Amount:</strong> ${{ number_format($user->wallet->withdrawal_amount, 2) }}
-                    </p>
-                    <p><strong>Profit Amount:</strong> ${{ number_format($user->wallet->profit_amount, 2) }}</p>
-                    <p><strong>Bonus Amount:</strong> ${{ number_format($user->wallet->bonus_amount, 2) }}</p>
-                    <p><strong>Referral Amount:</strong> ${{ number_format($user->wallet->referral_amount, 2) }}</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Deposit Amount:</strong> ${{ number_format($user->wallet->deposit_amount, 2) }}</p>
+                            <p><strong>Profit Amount:</strong> ${{ number_format($user->wallet->profit_amount, 2) }}</p>
+                            <p><strong>Referral Amount:</strong> ${{ number_format($user->wallet->referral_amount, 2) }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Withdrawal Amount:</strong> ${{ number_format($user->wallet->withdrawal_amount, 2) }}</p>
+                            <p><strong>Bonus Amount:</strong> ${{ number_format($user->wallet->bonus_amount, 2) }}</p>
+                            <p><strong>Locked Amount:</strong> ${{ number_format($user->wallet->locked_amount, 2) }}</p>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="text-center">
+                        <h4 class="text-success">
+                            <i class="fas fa-wallet"></i> 
+                            Total Balance: ${{ number_format($user->wallet->total_balance, 2) }}
+                        </h4>
+                    </div>
                 </div>
             </div>
         </div>
@@ -336,6 +358,10 @@
             <form action="{{ route('admin.user.update-wallet', $user->id) }}" method="POST">
                 @csrf
                 <div class="modal-body">
+                    <div class="alert alert-info mb-3">
+                        <h6><i class="fas fa-wallet"></i> <strong>Current Total Balance: ${{ number_format($user->wallet->total_balance ?? 0, 2) }}</strong></h6>
+                    </div>
+                    
                     <div class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle"></i>
                         <strong>Warning:</strong> This will directly update the user's wallet balances. Use with caution.
@@ -402,6 +428,54 @@
                         <label for="reason" class="form-label">Reason (Required)</label>
                         <textarea class="form-control" id="reason" name="reason" rows="3" 
                                   placeholder="Enter reason for updating wallet balances..." required></textarea>
+                    </div>
+                    
+                    <!-- Wallet Breakdown Summary -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-chart-pie"></i> Wallet Breakdown</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <small class="text-muted">Deposit Amount:</small><br>
+                                    <strong>${{ number_format($user->wallet->deposit_amount ?? 0, 2) }}</strong>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted">Profit Amount:</small><br>
+                                    <strong>${{ number_format($user->wallet->profit_amount ?? 0, 2) }}</strong>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <small class="text-muted">Referral Amount:</small><br>
+                                    <strong>${{ number_format($user->wallet->referral_amount ?? 0, 2) }}</strong>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted">Bonus Amount:</small><br>
+                                    <strong>${{ number_format($user->wallet->bonus_amount ?? 0, 2) }}</strong>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <small class="text-muted">Withdrawal Amount:</small><br>
+                                    <strong>${{ number_format($user->wallet->withdrawal_amount ?? 0, 2) }}</strong>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted">Locked Amount:</small><br>
+                                    <strong>${{ number_format($user->wallet->locked_amount ?? 0, 2) }}</strong>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="text-center">
+                                <h5 class="text-success">
+                                    <i class="fas fa-wallet"></i> 
+                                    Total Balance: ${{ number_format($user->wallet->total_balance ?? 0, 2) }}
+                                </h5>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">

@@ -259,14 +259,14 @@ class UserController extends Controller
 
             $user = User::find(Auth::id());
             if (!$user) {
-                \Log::error('User not found for ID: ' . Auth::id());
+                Log::error('User not found for ID: ' . Auth::id());
                 return ResponseHelper::error('User not found');
             }
 
-            \Log::info('Profile data returned', ['user_id' => $user->id, 'email' => $user->email]);
+            Log::info('Profile data returned', ['user_id' => $user->id, 'email' => $user->email]);
             return ResponseHelper::success($user, "Your profile");
         } catch (Exception $ex) {
-            \Log::error('Profile error: ' . $ex->getMessage());
+            Log::error('Profile error: ' . $ex->getMessage());
             return ResponseHelper::error('Not fetch the single user datas' . $ex);
         }
     }
@@ -274,7 +274,7 @@ class UserController extends Controller
     public function update(UserRequest $request)
     {
         try {
-            \Log::info('Profile update request received', [
+            Log::info('Profile update request received', [
                 'auth_id' => Auth::id(),
                 'request_data' => $request->all()
             ]);
@@ -283,7 +283,7 @@ class UserController extends Controller
             $user = User::find(Auth::id());
 
             if (!$user) {
-                \Log::error('User not found for ID: ' . Auth::id());
+                Log::error('User not found for ID: ' . Auth::id());
                 return ResponseHelper::error('User not found');
             }
 
@@ -303,14 +303,14 @@ class UserController extends Controller
             // Update user
             $user->update($data);
 
-            \Log::info('Profile updated successfully', [
+            Log::info('Profile updated successfully', [
                 'user_id' => $user->id,
                 'updated_fields' => array_keys($data)
             ]);
 
             return ResponseHelper::success($user, 'User profile updated successfully');
         } catch (Exception $ex) {
-            \Log::error('Profile update error: ' . $ex->getMessage());
+            Log::error('Profile update error: ' . $ex->getMessage());
             return ResponseHelper::error('Failed to update profile: ' . $ex->getMessage());
         }
     }

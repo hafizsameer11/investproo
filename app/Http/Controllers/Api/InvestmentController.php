@@ -139,6 +139,8 @@ class InvestmentController extends Controller
             if (!$wallet) {
                 return ResponseHelper::error('Wallet not found', 422);
             }
+            //free the locked amount 
+            // $wallet->locked_amount -= $investment->amount;
 
             // Use the cancel method from Investment model
             if ($investment->cancel()) {
