@@ -59,13 +59,13 @@ class WalletOps
 
         // Log transaction for traceability
         if ($breakdown['total_deducted'] > 0) {
-            Transaction::create([
-                'user_id' => $wallet->user_id,
-                'type' => 'wallet_debit',
-                'amount' => $breakdown['total_deducted'],
-                'status' => 'completed',
-                'description' => "Wallet debit breakdown: Profit: {$breakdown['profit_amount']}, Referral: {$breakdown['referral_amount']}, Deposit: {$breakdown['deposit_amount']}",
-            ]);
+            // Transaction::create([
+            //     'user_id' => $wallet->user_id,
+            //     'type' => 'wallet_debit',
+            //     'amount' => $breakdown['total_deducted'],
+            //     'status' => 'completed',
+            //     'description' => "Wallet debit breakdown: Profit: {$breakdown['profit_amount']}, Referral: {$breakdown['referral_amount']}, Deposit: {$breakdown['deposit_amount']}",
+            // ]);
         }
 
         return $breakdown;
@@ -96,13 +96,13 @@ class WalletOps
         $wallet->save();
 
         // Log refund transaction
-        Transaction::create([
-            'user_id' => $wallet->user_id,
-            'type' => 'wallet_refund',
-            'amount' => $amount,
-            'status' => 'completed',
-            'description' => "Refund to {$bucket} bucket",
-        ]);
+        // Transaction::create([
+        //     'user_id' => $wallet->user_id,
+        //     'type' => 'wallet_refund',
+        //     'amount' => $amount,
+        //     'status' => 'completed',
+        //     'description' => "Refund to {$bucket} bucket",
+        // ]);
     }
 
     /**
@@ -116,13 +116,13 @@ class WalletOps
         $wallet->locked_amount += $amount;
         $wallet->save();
 
-        Transaction::create([
-            'user_id' => $wallet->user_id,
-            'type' => 'amount_locked',
-            'amount' => $amount,
-            'status' => 'completed',
-            'description' => "Amount locked for investment",
-        ]);
+        // Transaction::create([
+        //     'user_id' => $wallet->user_id,
+        //     'type' => 'amount_locked',
+        //     'amount' => $amount,
+        //     'status' => 'completed',
+        //     'description' => "Amount locked for investment",
+        // ]);
     }
 
     /**
@@ -136,12 +136,12 @@ class WalletOps
         $wallet->locked_amount = max(0, $wallet->locked_amount - $amount);
         $wallet->save();
 
-        Transaction::create([
-            'user_id' => $wallet->user_id,
-            'type' => 'amount_unlocked',
-            'amount' => $amount,
-            'status' => 'completed',
-            'description' => "Amount unlocked from investment",
-        ]);
+        // Transaction::create([
+        //     'user_id' => $wallet->user_id,
+        //     'type' => 'amount_unlocked',
+        //     'amount' => $amount,
+        //     'status' => 'completed',
+        //     'description' => "Amount unlocked from investment",
+        // ]);
     }
 }
