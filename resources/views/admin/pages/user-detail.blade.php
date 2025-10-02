@@ -347,6 +347,118 @@
     </div>
 </div>
 
+<!-- Claimed Amounts Section -->
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-coins"></i> Claimed Amounts by Investment
+                </h5>
+                <p class="text-muted mb-0">Track all claimed amounts for each investment</p>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Investment ID</th>
+                                <th>Plan Name</th>
+                                <th>Investment Amount</th>
+                                <th>Expected Return</th>
+                                <th>Total Claimed</th>
+                                <th>Remaining to Claim</th>
+                                <th>Claim Status</th>
+                                <th>Last Claim Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($user->investments as $index => $investment)
+                                @php
+                                    $totalClaimed = $user->claimedAmounts->where('investment_id', $investment->id)->sum('amount');
+                                    $remainingToClaim = max(0, ($investment->expected_return ?? 0) - $totalClaimed);
+                                    $lastClaim = $user->claimedAmounts->where('investment_id', $investment->id)->sortByDesc('created_at')->first();
+                                @endphp
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>
+                                        <span class="badge bg-primary">#{{ $investment->id }}</span>
+                                    </td>
+                                    <td>{{ $investment->investmentPlan->name ?? 'N/A' }}</td>
+                                    <td>${{ number_format($investment->amount, 2) }}</td>
+                                    <td>${{ number_format($investment->expected_return ?? 0, 2) }}</td>
+                                    <td>
+                                        <span class="text-success fw-bold">${{ number_format($totalClaimed, 2) }}</span>
+                                    </td>
+                                    <td>
+                                        @if ($remainingToClaim > 0)
+                                            <span class="text-warning fw-bold">${{ number_format($remainingToClaim, 2) }}</span>
+                                        @else
+                                            <span class="text-success">Fully Claimed</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if ($totalClaimed >= ($investment->expected_return ?? 0))
+                                            <span class="badge bg-success">Fully Claimed</span>
+                                        @elseif ($totalClaimed > 0)
+                                            <span class="badge bg-warning">Partially Claimed</span>
+                                        @else
+                                            <span class="badge bg-danger">Not Claimed</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if ($lastClaim)
+                                            {{ \Carbon\Carbon::parse($lastClaim->created_at)->format('M d, Y H:i') }}
+                                        @else
+                                            <span class="text-muted">Never</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="9" class="text-center">No investments found</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Claimed Amounts Summary -->
+                @if ($user->claimedAmounts->count() > 0)
+                <div class="mt-4">
+                    <h6 class="text-muted mb-3">Claimed Amounts Details</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Investment ID</th>
+                                    <th>Claimed Amount</th>
+                                    <th>Reason</th>
+                                    <th>Claim Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($user->claimedAmounts->sortByDesc('created_at') as $claimed)
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-secondary">#{{ $claimed->investment_id }}</span>
+                                        </td>
+                                        <td class="text-success fw-bold">${{ number_format($claimed->amount, 2) }}</td>
+                                        <td>{{ $claimed->reason ?? 'N/A' }}</td>
+                                        <td>{{ \Carbon\Carbon::parse($claimed->created_at)->format('M d, Y H:i') }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Update Wallet Modal -->
 <div class="modal fade" id="updateWalletModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
