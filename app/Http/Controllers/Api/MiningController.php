@@ -297,7 +297,8 @@ Log::info("session for user $user->email", [$session]);
                 );
 
                 $wallet->increment('profit_amount', $amount);
-
+                // also updat the total_balance
+                $wallet->increment('total_balance', $amount);
                 // 3) Mark session claimed
                 $session->update(['rewards_claimed' => true,'status'=>'completed']);
                 // MiningSession::where('id', $session->id)->update(['rewards_claimed' => true]);
