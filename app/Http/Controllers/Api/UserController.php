@@ -13,6 +13,7 @@ use App\Services\OtpService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -206,7 +207,7 @@ class UserController extends Controller
         }
 
         // --- Step 3: Verify password ---
-        if (!\Hash::check($data['password'], $user->password)) {
+        if (!Hash::check($data['password'], $user->password)) {
             return ResponseHelper::error([
                 'field'   => 'password',
                 'message' => 'The password is incorrect'
@@ -251,7 +252,7 @@ class UserController extends Controller
     public function profile()
     {
         try {
-            \Log::info('Profile request received', [
+            Log::info('Profile request received', [
                 'auth_id' => Auth::id(),
                 'auth_check' => Auth::check(),
                 'user' => Auth::user()
