@@ -486,6 +486,7 @@ class UserController extends Controller
             return redirect()->back()->with('error', 'Failed to update wallet: ' . $e->getMessage());
         }
     }
+
     public function getUserReferrals(User $user, $maxDepth = 5)
 {
     $referrals = collect(); // Flat collection of all referrals

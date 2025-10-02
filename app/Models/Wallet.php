@@ -23,7 +23,6 @@ protected static function booted()
         static::saving(function ($wallet) {
             $wallet->total_balance =
                 ($wallet->deposit_amount ?? 0)
-                + ($wallet->withdrawal_amount ?? 0)
                 + ($wallet->profit_amount ?? 0)
                 + ($wallet->bonus_amount ?? 0)
                 + ($wallet->referral_amount ?? 0);
