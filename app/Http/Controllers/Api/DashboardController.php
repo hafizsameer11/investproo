@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
+
 public function dashboard()
 {
     try {
@@ -48,6 +49,7 @@ public function dashboard()
         // ✅ Step 1: Get latest investment
         $latestInvestment = Investment::where('user_id', $userId)
             ->orderBy('created_at', 'desc')
+            ->where('status', 'active')
             ->first();
 
         $calculatedProfit = 0;
