@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\MiningSession;
 use App\Models\User;
 use App\Models\Wallet;
+use App\Models\ClaimedAmount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -26,9 +27,17 @@ class MiningControlController extends Controller
             'total_sessions' => MiningSession::count(),
             'active_sessions' => MiningSession::where('status', 'active')->count(),
             'completed_sessions' => MiningSession::where('status', 'completed')->count(),
-            'total_rewards' => MiningSession::sum('rewards_earned'),
-            'claimed_rewards' => MiningSession::where('rewards_claimed', true)->sum('rewards_earned'),
-            'unclaimed_rewards' => MiningSession::where('rewards_claimed', false)->sum('rewards_earned'),
+            'total_rewards' => ClaimedAmount::sum('amount'),
+            'claimed_rewards' => ClaimedAmount::whereHas('investment', function($query) {
+                $query->whereHas('miningSessions', function($subQuery) {
+                    $subQuery->where('rewards_claimed', true);
+                });
+            })->sum('amount'),
+            'unclaimed_rewards' => ClaimedAmount::whereHas('investment', function($query) {
+                $query->whereHas('miningSessions', function($subQuery) {
+                    $subQuery->where('rewards_claimed', false);
+                });
+            })->sum('amount'),
         ];
 
         return view('admin.pages.mining-control', compact('miningSessions', 'stats'));
@@ -83,10 +92,17 @@ class MiningControlController extends Controller
 
         DB::beginTransaction();
         try {
-            $session->update([
-                'rewards_earned' => $request->rewards_earned,
-                'updated_at' => Carbon::now()
-            ]);
+            // Create or update a ClaimedAmount record for this mining session
+            ClaimedAmount::updateOrCreate(
+                [
+                    'user_id' => $session->user_id,
+                    'investment_id' => $session->investment_id,
+                ],
+                [
+                    'amount' => $request->rewards_earned,
+                    'reason' => 'Mining rewards updated by admin: ' . $request->reason
+                ]
+            );
 
             // Log the admin action
             \App\Models\AdminEdit::create([
@@ -124,10 +140,13 @@ class MiningControlController extends Controller
 
         DB::beginTransaction();
         try {
+            // Get the total rewards earned for this session
+            $totalRewards = $session->rewards_earned;
+            
             // Add rewards to user's profit amount
             $wallet = $session->user->wallet;
             if ($wallet) {
-                $wallet->increment('profit_amount', $session->rewards_earned);
+                $wallet->increment('profit_amount', $totalRewards);
                 $wallet->save();
             }
 

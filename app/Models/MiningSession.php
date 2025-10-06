@@ -12,7 +12,6 @@ class MiningSession extends Model
         'stopped_at',
         'status',
         'progress',
-        'rewards_earned',
         'rewards_claimed',
         'investment_id'
     ];
@@ -20,7 +19,6 @@ class MiningSession extends Model
     protected $casts = [
         'started_at' => 'datetime',
         'stopped_at' => 'datetime',
-        'rewards_earned' => 'decimal:2',
         'rewards_claimed' => 'boolean',
     ];
 
@@ -32,5 +30,15 @@ class MiningSession extends Model
     public function investment()
     {
         return $this->belongsTo(Investment::class);
+    }
+
+    public function claimedAmounts()
+    {
+        return $this->hasMany(ClaimedAmount::class, 'investment_id', 'investment_id');
+    }
+
+    public function getRewardsEarnedAttribute()
+    {
+        return $this->claimedAmounts()->sum('amount');
     }
 }
