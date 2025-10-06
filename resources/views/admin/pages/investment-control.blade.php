@@ -293,7 +293,7 @@ function viewInvestmentDetails(investmentId) {
     $('#investmentDetailsModal').modal('show');
     
     $.ajax({
-        url: `/admin/investment-control/${investmentId}/details`,
+        url: `/investment-control/${investmentId}/details`,
         method: 'GET',
         success: function(response) {
             if (response.success) {
@@ -354,12 +354,12 @@ function viewInvestmentDetails(investmentId) {
 }
 
 function cancelInvestment(investmentId) {
-    $('#cancelInvestmentForm').attr('action', `/admin/investment-control/${investmentId}/cancel`);
+    $('#cancelInvestmentForm').attr('action', `/investment-control/${investmentId}/cancel`);
     $('#cancelInvestmentModal').modal('show');
 }
 
 function completeInvestment(investmentId) {
-    $('#completeInvestmentForm').attr('action', `/admin/investment-control/${investmentId}/complete`);
+    $('#completeInvestmentForm').attr('action', `/investment-control/${investmentId}/complete`);
     $('#completeInvestmentModal').modal('show');
 }
 </script>

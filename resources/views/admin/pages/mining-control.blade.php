@@ -26,7 +26,7 @@
                         <div class="flex-shrink-0">
                             <div class="avatar-sm rounded-circle bg-primary bg-soft">
                                 <span class="avatar-title rounded-circle bg-primary text-white font-size-18">
-                                    <i class="mdi mdi-cog"></i>
+                                    <i class="fas fa-cog"></i>
                                 </span>
                             </div>
                         </div>
@@ -45,7 +45,7 @@
                         <div class="flex-shrink-0">
                             <div class="avatar-sm rounded-circle bg-success bg-soft">
                                 <span class="avatar-title rounded-circle bg-success text-white font-size-18">
-                                    <i class="mdi mdi-play"></i>
+                                    <i class="fas fa-play"></i>
                                 </span>
                             </div>
                         </div>
@@ -64,7 +64,7 @@
                         <div class="flex-shrink-0">
                             <div class="avatar-sm rounded-circle bg-info bg-soft">
                                 <span class="avatar-title rounded-circle bg-info text-white font-size-18">
-                                    <i class="mdi mdi-check"></i>
+                                    <i class="fas fa-check"></i>
                                 </span>
                             </div>
                         </div>
@@ -83,7 +83,7 @@
                         <div class="flex-shrink-0">
                             <div class="avatar-sm rounded-circle bg-warning bg-soft">
                                 <span class="avatar-title rounded-circle bg-warning text-white font-size-18">
-                                    <i class="mdi mdi-currency-usd"></i>
+                                    <i class="fas fa-dollar-sign"></i>
                                 </span>
                             </div>
                         </div>
@@ -102,7 +102,7 @@
                         <div class="flex-shrink-0">
                             <div class="avatar-sm rounded-circle bg-success bg-soft">
                                 <span class="avatar-title rounded-circle bg-success text-white font-size-18">
-                                    <i class="mdi mdi-check-circle"></i>
+                                    <i class="fas fa-check-circle"></i>
                                 </span>
                             </div>
                         </div>
@@ -121,7 +121,7 @@
                         <div class="flex-shrink-0">
                             <div class="avatar-sm rounded-circle bg-danger bg-soft">
                                 <span class="avatar-title rounded-circle bg-danger text-white font-size-18">
-                                    <i class="mdi mdi-alert"></i>
+                                    <i class="fas fa-exclamation-triangle"></i>
                                 </span>
                             </div>
                         </div>
@@ -310,7 +310,7 @@
                 @method('DELETE')
                 <div class="modal-body">
                     <div class="alert alert-danger">
-                        <i class="mdi mdi-alert-circle"></i>
+                        <i class="fas fa-exclamation-triangle"></i>
                         <strong>Warning:</strong> This action cannot be undone. The mining session will be permanently deleted.
                     </div>
                     <div class="mb-3">
@@ -340,7 +340,7 @@
                 @csrf
                 <div class="modal-body">
                     <div class="alert alert-info">
-                        <i class="mdi mdi-information"></i>
+                        <i class="fas fa-info-circle"></i>
                         <strong>Info:</strong> This will add the mining rewards to the user's profit balance.
                     </div>
                     <div class="mb-3">
@@ -370,7 +370,7 @@
                 @csrf
                 <div class="modal-body">
                     <div class="alert" id="sessionActionAlert">
-                        <i class="mdi mdi-information"></i>
+                        <i class="fas fa-info-circle"></i>
                         <span id="sessionActionText">Action description</span>
                     </div>
                     <div class="mb-3">
@@ -394,7 +394,7 @@ function viewSessionDetails(sessionId) {
     $('#sessionDetailsModal').modal('show');
     
     $.ajax({
-        url: `/admin/mining-control/${sessionId}/details`,
+        url: `/mining-control/${sessionId}/details`,
         method: 'GET',
         success: function(response) {
             if (response.success) {
@@ -443,17 +443,17 @@ function viewSessionDetails(sessionId) {
 }
 
 function updateRewards(sessionId) {
-    $('#updateRewardsForm').attr('action', `/admin/mining-control/${sessionId}/update-rewards`);
+    $('#updateRewardsForm').attr('action', `/mining-control/${sessionId}/update-rewards`);
     $('#updateRewardsModal').modal('show');
 }
 
 function deleteSession(sessionId) {
-    $('#deleteSessionForm').attr('action', `/admin/mining-control/${sessionId}/delete`);
+    $('#deleteSessionForm').attr('action', `/mining-control/${sessionId}/delete`);
     $('#deleteSessionModal').modal('show');
 }
 
 function forceClaimRewards(sessionId) {
-    $('#forceClaimForm').attr('action', `/admin/mining-control/${sessionId}/force-claim`);
+    $('#forceClaimForm').attr('action', `/mining-control/${sessionId}/force-claim`);
     $('#forceClaimModal').modal('show');
 }
 
@@ -462,7 +462,7 @@ function activateSession(sessionId) {
     $('#sessionActionText').text('This will activate the mining session and start the mining process.');
     $('#sessionActionAlert').removeClass('alert-warning alert-info').addClass('alert-success');
     $('#sessionActionButton').removeClass('btn-warning btn-info').addClass('btn-success').text('Activate');
-    $('#sessionActionForm').attr('action', `/admin/mining-control/${sessionId}/activate`);
+    $('#sessionActionForm').attr('action', `/mining-control/${sessionId}/activate`);
     $('#sessionActionModal').modal('show');
 }
 
@@ -471,7 +471,7 @@ function deactivateSession(sessionId) {
     $('#sessionActionText').text('This will deactivate the mining session and stop the mining process.');
     $('#sessionActionAlert').removeClass('alert-success alert-info').addClass('alert-warning');
     $('#sessionActionButton').removeClass('btn-success btn-info').addClass('btn-warning').text('Deactivate');
-    $('#sessionActionForm').attr('action', `/admin/mining-control/${sessionId}/deactivate`);
+    $('#sessionActionForm').attr('action', `/mining-control/${sessionId}/deactivate`);
     $('#sessionActionModal').modal('show');
 }
 </script>
