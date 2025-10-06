@@ -159,6 +159,7 @@ public function dashboard()
         $active_users = User::where('status', 'active')->count();
 
         $total_deposit = Deposit::sum('amount');
+        $total_withdrawal = Withdrawal::where('status', 'active')->count();
         $total_withdrawal_amount = Withdrawal::where('status', 'active')->sum('amount');
 
         // New metrics
@@ -177,6 +178,7 @@ public function dashboard()
             'all_users',
             'active_users',
             'total_deposit',
+            'total_withdrawal',
             'total_withdrawal_amount',
             'approved_deposits',
             'pending_deposits',

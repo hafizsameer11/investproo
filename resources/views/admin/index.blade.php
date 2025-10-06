@@ -38,6 +38,7 @@
                 <div class="card-body">
                     <h6 class="mb-1">Total Withdrawals</h6>
                     <div class="display-6">${{ number_format($total_withdrawal_amount, 2) }}</div>
+                    <small>Count: {{ $total_withdrawal }}</small>
                 </div>
             </div>
         </div>
