@@ -442,15 +442,7 @@ class UserController extends Controller
         }
 
         // Toggle user status between active/inactive
-        public function toggleStatus(Request $request, $userId)
-        {
-            $user = User::findOrFail($userId);
-            $newStatus = $user->status === 'active' ? 'inactive' : 'active';
-            $user->status = $newStatus;
-            $user->save();
-
-            return redirect()->back()->with('success', "User status updated to {$newStatus}.");
-        }
+     
 
         DB::beginTransaction();
         try {
@@ -497,7 +489,15 @@ class UserController extends Controller
             return redirect()->back()->with('error', 'Failed to update wallet: ' . $e->getMessage());
         }
     }
+    public function toggleStatus(Request $request, $userId)
+    {
+        $user = User::findOrFail($userId);
+        $newStatus = $user->status === 'active' ? 'inactive' : 'active';
+        $user->status = $newStatus;
+        $user->save();
 
+        return redirect()->back()->with('success', "User status updated to {$newStatus}.");
+    }
     public function getUserReferrals(User $user, $maxDepth = 5)
 {
     $referrals = collect(); // Flat collection of all referrals
