@@ -34,6 +34,16 @@ class Investment extends Model
     return $this->belongsTo(InvestmentPlan::class);
   }
 
+  public function miningSessions()
+  {
+    return $this->hasMany(MiningSession::class);
+  }
+
+  public function claimedAmounts()
+  {
+    return $this->hasMany(ClaimedAmount::class);
+  }
+
   // Helper methods
   public function getDaysRemainingAttribute()
   {

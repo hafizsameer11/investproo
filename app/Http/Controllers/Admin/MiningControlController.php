@@ -28,15 +28,11 @@ class MiningControlController extends Controller
             'active_sessions' => MiningSession::where('status', 'active')->count(),
             'completed_sessions' => MiningSession::where('status', 'completed')->count(),
             'total_rewards' => ClaimedAmount::sum('amount'),
-            'claimed_rewards' => ClaimedAmount::whereHas('investment', function($query) {
-                $query->whereHas('miningSessions', function($subQuery) {
-                    $subQuery->where('rewards_claimed', true);
-                });
+            'claimed_rewards' => ClaimedAmount::whereHas('investment.miningSessions', function($query) {
+                $query->where('rewards_claimed', true);
             })->sum('amount'),
-            'unclaimed_rewards' => ClaimedAmount::whereHas('investment', function($query) {
-                $query->whereHas('miningSessions', function($subQuery) {
-                    $subQuery->where('rewards_claimed', false);
-                });
+            'unclaimed_rewards' => ClaimedAmount::whereHas('investment.miningSessions', function($query) {
+                $query->where('rewards_claimed', false);
             })->sum('amount'),
         ];
 
