@@ -12,6 +12,7 @@ class MiningSession extends Model
         'stopped_at',
         'status',
         'progress',
+        'rewards_earned',
         'rewards_claimed',
         'investment_id'
     ];
@@ -19,11 +20,17 @@ class MiningSession extends Model
     protected $casts = [
         'started_at' => 'datetime',
         'stopped_at' => 'datetime',
+        'rewards_earned' => 'decimal:2',
         'rewards_claimed' => 'boolean',
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function investment()
+    {
+        return $this->belongsTo(Investment::class);
     }
 }

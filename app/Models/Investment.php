@@ -10,6 +10,7 @@ class Investment extends Model
     'user_id',
     'investment_plan_id',
     'amount',
+    'expected_return',
     'start_date',
     'end_date',
     'status',
@@ -19,6 +20,7 @@ class Investment extends Model
     'start_date' => 'date',
     'end_date' => 'date',
     'amount' => 'decimal:2',
+    'expected_return' => 'decimal:2',
   ];
 
   // Relationships
@@ -75,6 +77,22 @@ class Investment extends Model
     
     $dailyProfitRate = $this->investmentPlan->profit_percentage / 100;
     return $this->amount * $dailyProfitRate;
+  }
+
+  public function getExpectedReturnAttribute($value)
+  {
+    // If expected_return is already set, return it
+    if ($value !== null) {
+      return $value;
+    }
+    
+    // Calculate expected return based on investment plan
+    if ($this->investmentPlan && $this->amount) {
+      $profitPercentage = $this->investmentPlan->profit_percentage / 100;
+      return $this->amount * $profitPercentage;
+    }
+    
+    return 0;
   }
   public function checkAndComplete()
 {
