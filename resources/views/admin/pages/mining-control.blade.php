@@ -206,28 +206,28 @@
                                             <div class="btn-group" role="group">
                                                 <button type="button" class="btn btn-sm btn-info" 
                                                         onclick="viewSessionDetails({{ $session->id }})">
-                                                    <i class="mdi mdi-eye"></i>
+                                                    <i class="fas fa-eye"></i>
                                                 </button>
                                                 @if($session->status === 'active')
                                                     <button type="button" class="btn btn-sm btn-warning" 
                                                             onclick="deactivateSession({{ $session->id }})">
-                                                        <i class="mdi mdi-pause"></i>
+                                                        <i class="fas fa-pause"></i>
                                                     </button>
                                                 @else
                                                     <button type="button" class="btn btn-sm btn-success" 
                                                             onclick="activateSession({{ $session->id }})">
-                                                        <i class="mdi mdi-play"></i>
+                                                        <i class="fas fa-play"></i>
                                                     </button>
                                                 @endif
                                                 @if(!$session->rewards_claimed)
                                                     <button type="button" class="btn btn-sm btn-primary" 
                                                             onclick="forceClaimRewards({{ $session->id }})">
-                                                        <i class="mdi mdi-check"></i>
+                                                        <i class="fas fa-check"></i>
                                                     </button>
                                                 @endif
                                                 <button type="button" class="btn btn-sm btn-danger" 
                                                         onclick="deleteSession({{ $session->id }})">
-                                                    <i class="mdi mdi-delete"></i>
+                                                    <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
                                         </td>

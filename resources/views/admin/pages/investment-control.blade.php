@@ -26,7 +26,7 @@
                         <div class="flex-shrink-0">
                             <div class="avatar-sm rounded-circle bg-primary bg-soft">
                                 <span class="avatar-title rounded-circle bg-primary text-white font-size-18">
-                                    <i class="mdi mdi-chart-line"></i>
+                                    <i class="fas fa-chart-line"></i>
                                 </span>
                             </div>
                         </div>
@@ -45,7 +45,7 @@
                         <div class="flex-shrink-0">
                             <div class="avatar-sm rounded-circle bg-success bg-soft">
                                 <span class="avatar-title rounded-circle bg-success text-white font-size-18">
-                                    <i class="mdi mdi-currency-usd"></i>
+                                    <i class="fas fa-dollar-sign"></i>
                                 </span>
                             </div>
                         </div>
@@ -64,7 +64,7 @@
                         <div class="flex-shrink-0">
                             <div class="avatar-sm rounded-circle bg-info bg-soft">
                                 <span class="avatar-title rounded-circle bg-info text-white font-size-18">
-                                    <i class="mdi mdi-trending-up"></i>
+                                    <i class="fas fa-trending-up"></i>
                                 </span>
                             </div>
                         </div>
@@ -83,7 +83,7 @@
                         <div class="flex-shrink-0">
                             <div class="avatar-sm rounded-circle bg-warning bg-soft">
                                 <span class="avatar-title rounded-circle bg-warning text-white font-size-18">
-                                    <i class="mdi mdi-calendar-today"></i>
+                                    <i class="fas fa-calendar-day"></i>
                                 </span>
                             </div>
                         </div>
@@ -168,15 +168,15 @@
                                             <div class="btn-group" role="group">
                                                 <button type="button" class="btn btn-sm btn-info" 
                                                         onclick="viewInvestmentDetails({{ $investment->id }})">
-                                                    <i class="mdi mdi-eye"></i> View
+                                                    <i class="fas fa-eye"></i> View
                                                 </button>
                                                 <button type="button" class="btn btn-sm btn-warning" 
                                                         onclick="cancelInvestment({{ $investment->id }})">
-                                                    <i class="mdi mdi-cancel"></i> Cancel
+                                                    <i class="fas fa-times"></i> Cancel
                                                 </button>
                                                 <button type="button" class="btn btn-sm btn-success" 
                                                         onclick="completeInvestment({{ $investment->id }})">
-                                                    <i class="mdi mdi-check"></i> Complete
+                                                    <i class="fas fa-check"></i> Complete
                                                 </button>
                                             </div>
                                         </td>
@@ -227,7 +227,7 @@
                 @csrf
                 <div class="modal-body">
                     <div class="alert alert-warning">
-                        <i class="mdi mdi-alert-circle"></i>
+                        <i class="fas fa-exclamation-triangle"></i>
                         <strong>Warning:</strong> This will cancel the investment and refund the amount to the user's deposit balance.
                     </div>
                     <div class="mb-3">
@@ -263,7 +263,7 @@
                 @csrf
                 <div class="modal-body">
                     <div class="alert alert-info">
-                        <i class="mdi mdi-information"></i>
+                        <i class="fas fa-info-circle"></i>
                         <strong>Info:</strong> This will complete the investment and add the profit to the user's wallet.
                     </div>
                     <div class="mb-3">
