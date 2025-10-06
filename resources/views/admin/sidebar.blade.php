@@ -68,6 +68,12 @@
                             <li>
                                 <a href="{{ route('news.index') }}" class="waves-effect"><i class="mdi mdi-star"></i><span> News </span></a>
                             </li>
+                            <li>
+                                <a href="{{ route('investment-control.index') }}" class="waves-effect"><i class="mdi mdi-chart-line"></i><span> Investment Control </span></a>
+                            </li>
+                            <li>
+                                <a href="{{ route('mining-control.index') }}" class="waves-effect"><i class="mdi mdi-cog"></i><span> Mining Control </span></a>
+                            </li>
 
 
                             {{-- <li class="has_sub">

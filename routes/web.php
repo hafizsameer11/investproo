@@ -10,6 +10,8 @@ use App\Http\Controllers\Admin\LoyaltyController as AdminLoyaltyController;
 use App\Http\Controllers\Admin\RewardsController;
 use App\Http\Controllers\Admin\ActiveInvestmentsController;
 use App\Http\Controllers\Admin\MiningSessionsController;
+use App\Http\Controllers\Admin\InvestmentControlController;
+use App\Http\Controllers\Admin\MiningControlController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DepositeController;
 use App\Http\Controllers\Api\TransactionController;
@@ -110,6 +112,22 @@ Route::post('/mining-sessions/{id}/reward', [MiningSessionsController::class, 'u
 Route::post('/mining-sessions/{id}/activate', [MiningSessionsController::class, 'activateSession'])->name('mining-sessions.activate');
 Route::post('/mining-sessions/{id}/deactivate', [MiningSessionsController::class, 'deactivateSession'])->name('mining-sessions.deactivate');
 Route::get('/mining-sessions/stats', [MiningSessionsController::class, 'getSessionStats'])->name('mining-sessions.stats');
+
+// Investment Control Routes
+Route::get('/investment-control', [InvestmentControlController::class, 'index'])->name('investment-control.index');
+Route::post('/investment-control/{id}/cancel', [InvestmentControlController::class, 'cancelInvestment'])->name('investment-control.cancel');
+Route::post('/investment-control/{id}/complete', [InvestmentControlController::class, 'completeInvestment'])->name('investment-control.complete');
+Route::get('/investment-control/{id}/details', [InvestmentControlController::class, 'getInvestmentDetails'])->name('investment-control.details');
+Route::put('/investment-control/{id}/update', [InvestmentControlController::class, 'updateInvestment'])->name('investment-control.update');
+
+// Mining Control Routes
+Route::get('/mining-control', [MiningControlController::class, 'index'])->name('mining-control.index');
+Route::delete('/mining-control/{id}/delete', [MiningControlController::class, 'deleteSession'])->name('mining-control.delete');
+Route::post('/mining-control/{id}/update-rewards', [MiningControlController::class, 'updateRewards'])->name('mining-control.update-rewards');
+Route::post('/mining-control/{id}/force-claim', [MiningControlController::class, 'forceClaimRewards'])->name('mining-control.force-claim');
+Route::post('/mining-control/{id}/activate', [MiningControlController::class, 'activateSession'])->name('mining-control.activate');
+Route::post('/mining-control/{id}/deactivate', [MiningControlController::class, 'deactivateSession'])->name('mining-control.deactivate');
+Route::get('/mining-control/{id}/details', [MiningControlController::class, 'getSessionDetails'])->name('mining-control.details');
 
 });
 
