@@ -23,11 +23,23 @@
                 </div>
                 @endif
                 
-                <!-- Wallet Update Button -->
+        <!-- Wallet Update Button and Status Toggle -->
                 <div class="mt-3">
                     <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#updateWalletModal">
                         <i class="fas fa-wallet"></i> Update Wallet
                     </button>
+            <form action="{{ route('admin.user.toggle-status', $user->id) }}" method="POST" class="d-inline ms-2">
+                @csrf
+                @if($user->status === 'active')
+                    <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Deactivate this user?')">
+                        <i class="fas fa-user-slash"></i> Deactivate User
+                    </button>
+                @else
+                    <button type="submit" class="btn btn-outline-success" onclick="return confirm('Activate this user?')">
+                        <i class="fas fa-user-check"></i> Activate User
+                    </button>
+                @endif
+            </form>
                 </div>
             </div>
         </div>

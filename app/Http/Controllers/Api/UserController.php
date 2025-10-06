@@ -441,6 +441,17 @@ class UserController extends Controller
             ]);
         }
 
+        // Toggle user status between active/inactive
+        public function toggleStatus(Request $request, $userId)
+        {
+            $user = User::findOrFail($userId);
+            $newStatus = $user->status === 'active' ? 'inactive' : 'active';
+            $user->status = $newStatus;
+            $user->save();
+
+            return redirect()->back()->with('success', "User status updated to {$newStatus}.");
+        }
+
         DB::beginTransaction();
         try {
             $oldValues = $wallet->toArray();

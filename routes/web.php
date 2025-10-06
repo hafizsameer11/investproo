@@ -42,6 +42,7 @@ Route::delete('/deleteUser/{id}', [UserController::class, 'deleteUser'])->name('
 Route::get('/user/{id}/detail', [UserController::class, 'userDetail'])->name('user.detail');
 Route::get('/admin/users/{id}', [UserController::class, 'userDetail'])->name('admin.user.detail');
 Route::post('/admin/users/{id}/update-wallet', [UserController::class, 'updateWallet'])->name('admin.user.update-wallet');
+Route::post('/admin/users/{id}/toggle-status', [UserController::class, 'toggleStatus'])->name('admin.user.toggle-status');
 // deposite
 Route::get('/deposit', [DepositeController::class, 'index'])->name('deposits');
 Route::get('/update/{depositId}', [DepositeController::class, 'update'])->name('deposits.verify');

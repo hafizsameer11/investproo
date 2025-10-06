@@ -1,4 +1,136 @@
 @include('admin.head')
+@include('admin.sidebar')
+@include('admin.navbar')
+
+<div class="container-fluid">
+    <div class="row g-3">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">Total Users</h6>
+                            <div class="display-6">{{ $total_users }}</div>
+                        </div>
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="mb-1">Active Users</h6>
+                    <div class="display-6">{{ $active_users }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="mb-1">Total Deposits</h6>
+                    <div class="display-6">${{ number_format($total_deposit, 2) }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h6 class="mb-1">Total Withdrawals</h6>
+                    <div class="display-6">${{ number_format($total_withdrawal_amount, 2) }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-1">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="mb-1"><i class="fas fa-calendar-day"></i> Today's Deposits</h6>
+                    <div class="d-flex justify-content-between">
+                        <div>Amount</div>
+                        <div class="fw-bold">${{ number_format($todayDepositsAmount, 2) }}</div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <div>Count</div>
+                        <div class="fw-bold">{{ $todayDepositsCount }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="mb-1"><i class="fas fa-calendar-day"></i> Today's Withdrawals</h6>
+                    <div class="d-flex justify-content-between">
+                        <div>Amount</div>
+                        <div class="fw-bold">${{ number_format($todayWithdrawalsAmount, 2) }}</div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <div>Count</div>
+                        <div class="fw-bold">{{ $todayWithdrawalsCount }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="mb-1">Deposits</h6>
+                    <div class="d-flex justify-content-between"><span>Approved</span><span class="fw-bold">{{ $approved_deposits }}</span></div>
+                    <div class="d-flex justify-content-between"><span>Pending</span><span class="fw-bold">{{ $pending_deposits }}</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="mb-1">Withdrawals</h6>
+                    <div class="d-flex justify-content-between"><span>Approved</span><span class="fw-bold">{{ $active_withdrawal }}</span></div>
+                    <div class="d-flex justify-content-between"><span>Pending</span><span class="fw-bold">{{ $pending_withdrawal }}</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header">
+            <h5 class="mb-0">Recent Users</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Joined</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($all_users as $u)
+                            <tr>
+                                <td>{{ $u->id }}</td>
+                                <td>{{ $u->name }}</td>
+                                <td>{{ $u->email }}</td>
+                                <td>
+                                    <span class="badge bg-{{ $u->status === 'active' ? 'success' : 'secondary' }}">{{ ucfirst($u->status) }}</span>
+                                </td>
+                                <td>{{ $u->created_at?->format('M d, Y') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@include('admin.footer')
+@include('admin.head')
 
 
 

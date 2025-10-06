@@ -155,28 +155,37 @@ public function dashboard()
     public function index()
     {
         $total_users = User::count();
-        $all_users = User::all();
+        $all_users = User::latest()->limit(10)->get();
         $active_users = User::where('status', 'active')->count();
-        $total_withdrawal = Withdrawal::where('status', 'active')->count();
+
         $total_deposit = Deposit::sum('amount');
-        $active_withdrawal = Withdrawal::where('status', 'active')->count();
-        $pending_withdrawal = Withdrawal::where('status', 'pending')->count();
         $total_withdrawal_amount = Withdrawal::where('status', 'active')->sum('amount');
+
+        // New metrics
+        $todayDepositsAmount = Deposit::whereDate('created_at', Carbon::today())->sum('amount');
+        $todayDepositsCount = Deposit::whereDate('created_at', Carbon::today())->count();
+        $todayWithdrawalsAmount = Withdrawal::whereDate('created_at', Carbon::today())->sum('amount');
+        $todayWithdrawalsCount = Withdrawal::whereDate('created_at', Carbon::today())->count();
 
         $approved_deposits = Deposit::where('status', 'active')->count();
         $pending_deposits = Deposit::where('status', 'pending')->count();
+        $active_withdrawal = Withdrawal::where('status', 'active')->count();
+        $pending_withdrawal = Withdrawal::where('status', 'pending')->count();
 
         return view('admin.index', compact(
-            'total_users', 
-            'all_users', 
-            'active_users', 
-            'total_deposit', 
-            'total_withdrawal', 
-            'active_withdrawal', 
-            'pending_withdrawal', 
-            'approved_deposits', 
+            'total_users',
+            'all_users',
+            'active_users',
+            'total_deposit',
+            'total_withdrawal_amount',
+            'approved_deposits',
             'pending_deposits',
-            'total_withdrawal_amount'
+            'active_withdrawal',
+            'pending_withdrawal',
+            'todayDepositsAmount',
+            'todayDepositsCount',
+            'todayWithdrawalsAmount',
+            'todayWithdrawalsCount'
         ));
     }
 }
