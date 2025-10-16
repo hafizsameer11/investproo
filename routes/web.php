@@ -62,6 +62,13 @@ Route::put('/plan-update/{id}', [PlanController::class, 'update'])->name('plans.
 Route::delete('/destroy/{id}', [PlanController::class, 'destroy'])->name('plans.destroy');
 // transaction
 Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions');
+Route::get('/admin/transactions', [UserController::class, 'getAllTransactions'])->name('admin.transactions');
+Route::get('/admin/transactions/{id}', [UserController::class, 'getTransactionDetails'])->name('admin.transaction.details');
+Route::put('/admin/transactions/{id}', [UserController::class, 'updateTransaction'])->name('admin.transaction.update');
+Route::put('/admin/transactions/bulk-update', [UserController::class, 'bulkUpdateTransactions'])->name('admin.transactions.bulk-update');
+Route::get('/admin/transaction-management', function() {
+    return view('admin.pages.transaction-management');
+})->name('admin.transaction-management');
 // chains
 Route::resource('/chains', ChainController::class);
 // referrals

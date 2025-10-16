@@ -111,6 +111,12 @@ Route::post('/contact', [ContactController::class, 'contact'])->middleware('auth
 Route::get('/single-transaction', [TransactionController::class, 'userTransactions'])->middleware('auth:sanctum');
 Route::get('/all-transaction', [TransactionController::class, 'allTransactions'])->middleware('auth:sanctum');
 
+// Admin transaction management routes
+Route::get('/admin/transactions', [UserController::class, 'getAllTransactions'])->middleware('auth:sanctum');
+Route::get('/admin/transactions/{id}', [UserController::class, 'getTransactionDetails'])->middleware('auth:sanctum');
+Route::put('/admin/transactions/{id}', [UserController::class, 'updateTransaction'])->middleware('auth:sanctum');
+Route::put('/admin/transactions/bulk-update', [UserController::class, 'bulkUpdateTransactions'])->middleware('auth:sanctum');
+
 Route::get('/investment', [InvestmentController::class, 'investment'])->middleware('auth:sanctum');
 Route::post('/investment/create', [InvestmentController::class, 'createInvestment'])->middleware('auth:sanctum');
 Route::post('/investment/{id}/cancel', [InvestmentController::class, 'cancelInvestment'])->middleware('auth:sanctum');

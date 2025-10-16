@@ -529,4 +529,224 @@ class UserController extends Controller
     return $referrals;
 }
 
+    // Update transaction amount and description
+    public function updateTransaction(Request $request, $transactionId)
+    {
+        try {
+            $request->validate([
+                'amount' => 'nullable|numeric|min:0',
+                'description' => 'nullable|string|max:500',
+                'reason' => 'nullable|string|max:255'
+            ]);
+
+            $transaction = \App\Models\Transaction::findOrFail($transactionId);
+            $oldValues = [
+                'amount' => $transaction->amount,
+                'description' => $transaction->description
+            ];
+
+            $changes = [];
+            
+            // Update amount if provided
+            if ($request->has('amount') && $request->amount !== null) {
+                if ($transaction->amount != $request->amount) {
+                    $transaction->amount = $request->amount;
+                    $changes['amount'] = [
+                        'old' => $oldValues['amount'],
+                        'new' => $request->amount
+                    ];
+                }
+            }
+
+            // Update description if provided
+            if ($request->has('description') && $request->description !== null) {
+                if ($transaction->description != $request->description) {
+                    $transaction->description = $request->description;
+                    $changes['description'] = [
+                        'old' => $oldValues['description'],
+                        'new' => $request->description
+                    ];
+                }
+            }
+
+            if (empty($changes)) {
+                return ResponseHelper::error('No changes detected', 400);
+            }
+
+            $transaction->save();
+
+            // Log each change
+            foreach ($changes as $field => $change) {
+                \App\Models\AdminEdit::create([
+                    'admin_id' => Auth::id(),
+                    'user_id' => $transaction->user_id,
+                    'field_name' => $field,
+                    'old_value' => $change['old'],
+                    'new_value' => $change['new'],
+                    'edit_type' => 'transaction_update',
+                    'reason' => $request->reason ?? 'Admin updated transaction'
+                ]);
+            }
+
+            return ResponseHelper::success($transaction, 'Transaction updated successfully');
+        } catch (\Exception $e) {
+            return ResponseHelper::error('Failed to update transaction: ' . $e->getMessage(), 500);
+        }
+    }
+
+    // Get all transactions for admin with pagination and filters
+    public function getAllTransactions(Request $request)
+    {
+        try {
+            $query = \App\Models\Transaction::with(['user', 'deposit', 'withdrawal']);
+
+            // Filter by user email if provided
+            if ($request->has('user_email') && !empty($request->user_email)) {
+                $query->whereHas('user', function($q) use ($request) {
+                    $q->where('email', 'like', '%' . $request->user_email . '%');
+                });
+            }
+
+            // Filter by transaction type if provided
+            if ($request->has('type') && !empty($request->type)) {
+                $query->where('type', $request->type);
+            }
+
+            // Filter by status if provided
+            if ($request->has('status') && !empty($request->status)) {
+                $query->where('status', $request->status);
+            }
+
+            // Filter by date range if provided
+            if ($request->has('date_from') && !empty($request->date_from)) {
+                $query->whereDate('created_at', '>=', $request->date_from);
+            }
+
+            if ($request->has('date_to') && !empty($request->date_to)) {
+                $query->whereDate('created_at', '<=', $request->date_to);
+            }
+
+            // Order by latest first
+            $query->orderBy('created_at', 'desc');
+
+            // Paginate results
+            $perPage = $request->get('per_page', 15);
+            $transactions = $query->paginate($perPage);
+
+            return ResponseHelper::success($transactions, 'Transactions retrieved successfully');
+        } catch (\Exception $e) {
+            return ResponseHelper::error('Failed to retrieve transactions: ' . $e->getMessage(), 500);
+        }
+    }
+
+    // Get single transaction details for admin
+    public function getTransactionDetails($transactionId)
+    {
+        try {
+            $transaction = \App\Models\Transaction::with(['user', 'deposit', 'withdrawal'])
+                ->findOrFail($transactionId);
+
+            // Get edit history for this transaction
+            $editHistory = \App\Models\AdminEdit::where('user_id', $transaction->user_id)
+                ->where('edit_type', 'transaction_update')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return ResponseHelper::success([
+                'transaction' => $transaction,
+                'edit_history' => $editHistory
+            ], 'Transaction details retrieved successfully');
+        } catch (\Exception $e) {
+            return ResponseHelper::error('Failed to retrieve transaction details: ' . $e->getMessage(), 500);
+        }
+    }
+
+    // Bulk update transactions
+    public function bulkUpdateTransactions(Request $request)
+    {
+        try {
+            $request->validate([
+                'transaction_ids' => 'required|array|min:1',
+                'transaction_ids.*' => 'integer|exists:transactions,id',
+                'amount' => 'nullable|numeric|min:0',
+                'description' => 'nullable|string|max:500',
+                'reason' => 'required|string|max:255'
+            ]);
+
+            $transactionIds = $request->transaction_ids;
+            $updatedCount = 0;
+            $errors = [];
+
+            DB::beginTransaction();
+            try {
+                foreach ($transactionIds as $transactionId) {
+                    $transaction = \App\Models\Transaction::find($transactionId);
+                    if (!$transaction) {
+                        $errors[] = "Transaction ID {$transactionId} not found";
+                        continue;
+                    }
+
+                    $oldValues = [
+                        'amount' => $transaction->amount,
+                        'description' => $transaction->description
+                    ];
+
+                    $changes = [];
+
+                    // Update amount if provided
+                    if ($request->has('amount') && $request->amount !== null) {
+                        if ($transaction->amount != $request->amount) {
+                            $transaction->amount = $request->amount;
+                            $changes['amount'] = [
+                                'old' => $oldValues['amount'],
+                                'new' => $request->amount
+                            ];
+                        }
+                    }
+
+                    // Update description if provided
+                    if ($request->has('description') && $request->description !== null) {
+                        if ($transaction->description != $request->description) {
+                            $transaction->description = $request->description;
+                            $changes['description'] = [
+                                'old' => $oldValues['description'],
+                                'new' => $request->description
+                            ];
+                        }
+                    }
+
+                    if (!empty($changes)) {
+                        $transaction->save();
+
+                        // Log each change
+                        foreach ($changes as $field => $change) {
+                            \App\Models\AdminEdit::create([
+                                'admin_id' => Auth::id(),
+                                'user_id' => $transaction->user_id,
+                                'field_name' => $field,
+                                'old_value' => $change['old'],
+                                'new_value' => $change['new'],
+                                'edit_type' => 'bulk_transaction_update',
+                                'reason' => $request->reason
+                            ]);
+                        }
+
+                        $updatedCount++;
+                    }
+                }
+
+                DB::commit();
+                return ResponseHelper::success([
+                    'updated_count' => $updatedCount,
+                    'errors' => $errors
+                ], "Bulk update completed. {$updatedCount} transactions updated successfully");
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return ResponseHelper::error('Failed to bulk update transactions: ' . $e->getMessage(), 500);
+        }
+    }
+
 }
