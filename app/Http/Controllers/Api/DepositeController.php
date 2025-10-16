@@ -183,66 +183,65 @@ class DepositeController extends Controller
     }
 
     /**
-     * Referral payout (only triggered on first investment)
+     * Referral payout to first user only (only triggered on first investment)
      */
     protected function payReferralTree(User $investor, float $investmentAmount, $plan): array
     {
         $report = [];
-        $level = 1;
-        $nextCode = $investor->referral_code;
-        $visited = [];
+        
+        // Only pay the first user (direct referrer)
+        $referralCode = $investor->referral_code;
+        
+        if (empty($referralCode)) {
+            return $report; // No referrer, no payment
+        }
 
-        while ($level <= 5 && !empty($nextCode)) {
-            if (isset($visited[$nextCode])) break; // prevent loops
-            $visited[$nextCode] = true;
+        $referrer = User::where('user_code', $referralCode)->lockForUpdate()->first();
+        if (!$referrer) {
+            return $report; // Referrer not found
+        }
 
-            $referrer = User::where('user_code', $nextCode)->lockForUpdate()->first();
-            if (!$referrer) break;
+        $refWallet = Wallet::firstOrCreate(['user_id' => $referrer->id], [
+            'deposit_amount' => 0,
+            'withdrawal_amount' => 0,
+            'profit_amount' => 0,
+            'bonus_amount' => 0,
+            'referral_amount' => 0,
+            'total_balance' => 0,
+            'locked_amount' => 0,
+            'is_invested' => false,
+            'status' => 'active',
+        ]);
 
-            $refWallet = Wallet::firstOrCreate(['user_id' => $referrer->id], [
-                'deposit_amount' => 0,
-                'withdrawal_amount' => 0,
-                'profit_amount' => 0,
-                'bonus_amount' => 0,
-                'referral_amount' => 0,
-                'total_balance' => 0,
-                'locked_amount' => 0,
-                'is_invested' => false,
-                'status' => 'active',
+        // Use level 1 percentage (10%)
+        $percentage = $this->referralPercentages[1] ?? 0.10;
+        $bonus = round($investmentAmount * $percentage, 2);
+
+        if ($bonus > 0) {
+            $refWallet->referral_amount += $bonus;
+            $refWallet->save();
+
+            Transaction::create([
+                'user_id'      => $referrer->id,
+                'type'         => 'referral',
+                'amount'       => $bonus,
+                'status'       => 'completed',
+                'description'  => "Referral bonus from {$investor->name} on {$plan->plan_name}",
+                'reference_id' => $investor->id,
             ]);
 
-            $percentage = $this->referralPercentages[$level] ?? 0;
-            $bonus = round($investmentAmount * $percentage, 2);
-
-            if ($bonus > 0) {
-                $refWallet->referral_amount += $bonus;
-                $refWallet->save();
-
-                Transaction::create([
-                    'user_id'      => $referrer->id,
-                    'type'         => 'referral',
-                    'amount'       => $bonus,
-                    'status'       => 'completed',
-                    'description'  => "Referral bonus (L{$level}) from {$investor->name} on {$plan->plan_name}",
-                    'reference_id' => $investor->id,
-                ]);
-
-                $report[] = [
-                    'level' => $level,
-                    'recipient_id' => $referrer->id,
-                    'recipient_code' => $referrer->user_code,
-                    'bonus' => $bonus,
-                ];
-            }
-
-            $nextCode = $referrer->referral_code;
-            $level++;
+            $report[] = [
+                'level' => 1,
+                'recipient_id' => $referrer->id,
+                'recipient_code' => $referrer->user_code,
+                'bonus' => $bonus,
+            ];
         }
 
         return $report;
     }
     /**
-     * Pay referral bonuses up to 5 levels above the investing user.
+     * Pay referral bonus to the first user (direct referrer) only.
      * Uses: parent = User where user_code == child.referral_code
      */
     protected function payReferralChainBonuses(User $investingUser, Investment $investment, $plan): void
@@ -255,44 +254,32 @@ class DepositeController extends Controller
 
         $amount = (float) $investment->amount;
         $currentReferralCode = $investingUser->referral_code;
-        $visited = []; // loop guard
 
-        for ($level = 1; $level <= 5; $level++) {
-            if (!$currentReferralCode) {
-                break;
-            }
+        // Only pay the first user (direct referrer)
+        /** @var User|null $referrer */
+        $referrer = User::where('user_code', $currentReferralCode)->first();
 
-            /** @var User|null $referrer */
-            $referrer = User::where('user_code', $currentReferralCode)->first();
+        if (!$referrer) {
+            Log::info('Referrer not found for code', [
+                'code' => $currentReferralCode,
+            ]);
+            return;
+        }
 
-            if (!$referrer) {
-                Log::info('Referrer not found for code', [
-                    'code'  => $currentReferralCode,
-                    'level' => $level,
-                ]);
-                break;
-            }
+        // Self guard
+        if ($referrer->id === $investingUser->id) {
+            Log::warning('Self-referral detected, skipping', [
+                'investing_user_id' => $investingUser->id,
+                'referrer_user_id'  => $referrer->id,
+            ]);
+            return;
+        }
 
-            // loop/self guard
-            if (isset($visited[$referrer->id]) || $referrer->id === $investingUser->id) {
-                Log::warning('Referral loop detected, breaking', [
-                    'investing_user_id' => $investingUser->id,
-                    'referrer_user_id'  => $referrer->id,
-                    'level'             => $level,
-                ]);
-                break;
-            }
-            $visited[$referrer->id] = true;
+        // Use level 1 percentage (10%)
+        $percent = $this->referralPercentages[1] ?? 0.10;
+        $bonus = round($amount * $percent, 2);
 
-            $percent = $this->referralPercentages[$level] ?? 0;
-            if ($percent <= 0) {
-                // no payout defined for this level
-                $currentReferralCode = $referrer->referral_code;
-                continue;
-            }
-
-            $bonus = round($amount * $percent, 2);
-
+        if ($bonus > 0) {
             // --- Update / create aggregated row in Referrals table (if you keep it) ---
             $agg = Referrals::firstOrCreate(
                 ['user_id' => $referrer->id],
@@ -327,12 +314,11 @@ class DepositeController extends Controller
                 'type'         => 'referral', // keep same type you already use
                 'amount'       => $bonus,
                 'status'       => 'completed',
-                'description'  => "Referral bonus (L{$level}) from {$investingUser->name} on plan {$plan->plan_name}",
+                'description'  => "Referral bonus from {$investingUser->name} on plan {$plan->plan_name}",
                 'reference_id' => $investment->id, // reference the investment; you can add column 'reference_type' if needed
             ]);
 
-            Log::info('Referral payout', [
-                'level'              => $level,
+            Log::info('Referral payout (first user only)', [
                 'referrer_user_id'   => $referrer->id,
                 'referrer_user_code' => $referrer->user_code,
                 'investing_user_id'  => $investingUser->id,
@@ -340,9 +326,6 @@ class DepositeController extends Controller
                 'percentage'         => $percent,
                 'bonus'              => $bonus,
             ]);
-
-            // Move up one level
-            $currentReferralCode = $referrer->referral_code;
         }
     }
 
