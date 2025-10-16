@@ -91,22 +91,49 @@
                 @endphp
                 <p><strong>Total Referrals:</strong> {{ $referrals->count() }}</p>
                 <p><strong>Referral Amount:</strong> {{ $referralsAmount }}</p>
-                <table class="table table-bordered">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">Referral Transactions</h6>
+                    <div>
+                        <button class="btn btn-sm btn-primary" onclick="refreshReferralTransactions()">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                        <button class="btn btn-sm btn-warning" onclick="editReferralAmount()">
+                            <i class="fas fa-edit"></i> Edit Total Amount
+                        </button>
+                        <button class="btn btn-sm btn-info" onclick="viewReferralEditHistory()">
+                            <i class="fas fa-history"></i> Edit History
+                        </button>
+                    </div>
+                </div>
+                
+                <table class="table table-bordered" id="referralTransactionsTable">
                     <thead>
                         <tr>
                             <th>Referral Name</th>
                             <th>Referral Amount</th>
+                            <th>Date</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="referralTransactionsBody">
                         @foreach ($totalReferrals as $referral)
                             @php
                                 // Fetch the user by reference_id
                                 $refUser = \App\Models\User::find($referral->reference_id);
                             @endphp
-                            <tr>
+                            <tr data-transaction-id="{{ $referral->id }}">
                                 <td>{{ $refUser ? $refUser->name : 'Unknown' }}</td>
-                                <td>{{ number_format($referral->amount, 2) }}</td>
+                                <td>
+                                    <span class="referral-amount" data-amount="{{ $referral->amount }}">
+                                        ${{ number_format($referral->amount, 2) }}
+                                    </span>
+                                </td>
+                                <td>{{ $referral->created_at->format('M d, Y') }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-warning" onclick="editReferralTransaction({{ $referral->id }}, {{ $referral->amount }})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -610,5 +637,300 @@
         </div>
     </div>
 </div>
+
+<!-- Edit Referral Amount Modal -->
+<div class="modal fade" id="editReferralAmountModal" tabindex="-1" aria-labelledby="editReferralAmountModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editReferralAmountModalLabel">Edit Referral Amount</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editReferralAmountForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="referralAmount" class="form-label">Total Referral Amount</label>
+                        <input type="number" class="form-control" id="referralAmount" step="0.01" min="0" required>
+                        <small class="text-muted">Current: ${{ number_format($user->wallet->referral_amount ?? 0, 2) }}</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="referralReason" class="form-label">Reason for Edit</label>
+                        <textarea class="form-control" id="referralReason" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Update Referral Amount</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Individual Referral Transaction Modal -->
+<div class="modal fade" id="editReferralTransactionModal" tabindex="-1" aria-labelledby="editReferralTransactionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editReferralTransactionModalLabel">Edit Referral Transaction</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editReferralTransactionForm">
+                <div class="modal-body">
+                    <input type="hidden" id="transactionId">
+                    <div class="mb-3">
+                        <label for="transactionAmount" class="form-label">Transaction Amount</label>
+                        <input type="number" class="form-control" id="transactionAmount" step="0.01" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="transactionReason" class="form-label">Reason for Edit</label>
+                        <textarea class="form-control" id="transactionReason" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Update Transaction</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Referral Edit History Modal -->
+<div class="modal fade" id="referralEditHistoryModal" tabindex="-1" aria-labelledby="referralEditHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="referralEditHistoryModalLabel">Referral Edit History</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="referralEditHistoryContent">
+                <!-- Edit history will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const userId = {{ $user->id }};
+
+// Edit referral amount
+function editReferralAmount() {
+    document.getElementById('referralAmount').value = {{ $user->wallet->referral_amount ?? 0 }};
+    document.getElementById('referralReason').value = '';
+    new bootstrap.Modal(document.getElementById('editReferralAmountModal')).show();
+}
+
+// Edit individual referral transaction
+function editReferralTransaction(transactionId, currentAmount) {
+    document.getElementById('transactionId').value = transactionId;
+    document.getElementById('transactionAmount').value = currentAmount;
+    document.getElementById('transactionReason').value = '';
+    new bootstrap.Modal(document.getElementById('editReferralTransactionModal')).show();
+}
+
+// Refresh referral transactions
+function refreshReferralTransactions() {
+    fetch(`/admin/users/${userId}/referral-transactions`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status) {
+            updateReferralTransactionsTable(data.data.referral_transactions);
+        } else {
+            showAlert('Error loading referral transactions: ' + data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error loading referral transactions', 'danger');
+    });
+}
+
+// Update referral transactions table
+function updateReferralTransactionsTable(transactions) {
+    const tbody = document.getElementById('referralTransactionsBody');
+    tbody.innerHTML = '';
+
+    transactions.forEach(transaction => {
+        const row = document.createElement('tr');
+        row.setAttribute('data-transaction-id', transaction.id);
+        row.innerHTML = `
+            <td>${transaction.user ? transaction.user.name : 'Unknown'}</td>
+            <td>
+                <span class="referral-amount" data-amount="${transaction.amount}">
+                    $${parseFloat(transaction.amount).toFixed(2)}
+                </span>
+            </td>
+            <td>${new Date(transaction.created_at).toLocaleDateString()}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-warning" onclick="editReferralTransaction(${transaction.id}, ${transaction.amount})">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Handle referral amount form submission
+document.getElementById('editReferralAmountForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        referral_amount: document.getElementById('referralAmount').value,
+        reason: document.getElementById('referralReason').value
+    };
+
+    fetch(`/admin/users/${userId}/referral-amount`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status) {
+            showAlert('Referral amount updated successfully', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('editReferralAmountModal')).hide();
+            // Refresh the page to show updated amounts
+            location.reload();
+        } else {
+            showAlert('Error updating referral amount: ' + data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error updating referral amount', 'danger');
+    });
+});
+
+// Handle referral transaction form submission
+document.getElementById('editReferralTransactionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const transactionId = document.getElementById('transactionId').value;
+    const formData = {
+        amount: document.getElementById('transactionAmount').value,
+        reason: document.getElementById('transactionReason').value
+    };
+
+    fetch(`/admin/referral-transactions/${transactionId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status) {
+            showAlert('Referral transaction updated successfully', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('editReferralTransactionModal')).hide();
+            // Update the table row
+            updateTransactionRow(transactionId, data.data.new_amount);
+        } else {
+            showAlert('Error updating referral transaction: ' + data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error updating referral transaction', 'danger');
+    });
+});
+
+// Update transaction row in table
+function updateTransactionRow(transactionId, newAmount) {
+    const row = document.querySelector(`tr[data-transaction-id="${transactionId}"]`);
+    if (row) {
+        const amountSpan = row.querySelector('.referral-amount');
+        amountSpan.textContent = `$${parseFloat(newAmount).toFixed(2)}`;
+        amountSpan.setAttribute('data-amount', newAmount);
+    }
+}
+
+// Show alert function
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.insertBefore(alertDiv, document.body.firstChild);
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+
+// View referral edit history
+function viewReferralEditHistory() {
+    fetch(`/admin/users/${userId}/referral-transactions`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status) {
+            displayReferralEditHistory(data.data.edit_history);
+        } else {
+            showAlert('Error loading edit history: ' + data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error loading edit history', 'danger');
+    });
+}
+
+// Display referral edit history
+function displayReferralEditHistory(editHistory) {
+    const content = document.getElementById('referralEditHistoryContent');
+    content.innerHTML = `
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Field</th>
+                        <th>Old Value</th>
+                        <th>New Value</th>
+                        <th>Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${editHistory.length > 0 ? 
+                        editHistory.map(edit => `
+                            <tr>
+                                <td>${new Date(edit.created_at).toLocaleString()}</td>
+                                <td>${edit.field_name}</td>
+                                <td>$${parseFloat(edit.old_value).toFixed(2)}</td>
+                                <td>$${parseFloat(edit.new_value).toFixed(2)}</td>
+                                <td>${edit.reason}</td>
+                            </tr>
+                        `).join('') : 
+                        '<tr><td colspan="5" class="text-center">No edit history found</td></tr>'
+                    }
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    new bootstrap.Modal(document.getElementById('referralEditHistoryModal')).show();
+}
+</script>
 
 @include('admin.footer')

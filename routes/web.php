@@ -69,6 +69,12 @@ Route::put('/admin/transactions/bulk-update', [UserController::class, 'bulkUpdat
 Route::get('/admin/transaction-management', function() {
     return view('admin.pages.transaction-management');
 })->name('admin.transaction-management');
+
+// Admin referral amount management routes
+Route::get('/admin/users/{id}/referral-transactions', [UserController::class, 'getUserReferralTransactions'])->name('admin.user.referral-transactions');
+Route::put('/admin/users/{id}/referral-amount', [UserController::class, 'updateReferralAmount'])->name('admin.user.referral-amount');
+Route::put('/admin/referral-transactions/{id}', [UserController::class, 'updateReferralTransaction'])->name('admin.referral-transaction.update');
+Route::put('/admin/referral-amounts/bulk-update', [UserController::class, 'bulkUpdateReferralAmounts'])->name('admin.referral-amounts.bulk-update');
 // chains
 Route::resource('/chains', ChainController::class);
 // referrals

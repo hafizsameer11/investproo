@@ -749,4 +749,210 @@ class UserController extends Controller
         }
     }
 
+    // Update referral amount for a specific user
+    public function updateReferralAmount(Request $request, $userId)
+    {
+        try {
+            $request->validate([
+                'referral_amount' => 'required|numeric|min:0',
+                'reason' => 'required|string|max:255'
+            ]);
+
+            $user = User::findOrFail($userId);
+            $wallet = $user->wallet;
+
+            if (!$wallet) {
+                $wallet = Wallet::create([
+                    'user_id' => $user->id,
+                    'status' => 'active'
+                ]);
+            }
+
+            $oldAmount = $wallet->referral_amount ?? 0;
+            $newAmount = $request->referral_amount;
+
+            if ($oldAmount != $newAmount) {
+                $wallet->referral_amount = $newAmount;
+                $wallet->save();
+
+                // Log the change
+                \App\Models\AdminEdit::create([
+                    'admin_id' => Auth::id(),
+                    'user_id' => $userId,
+                    'field_name' => 'referral_amount',
+                    'old_value' => $oldAmount,
+                    'new_value' => $newAmount,
+                    'edit_type' => 'referral_amount_update',
+                    'reason' => $request->reason
+                ]);
+
+                return ResponseHelper::success([
+                    'user_id' => $userId,
+                    'old_amount' => $oldAmount,
+                    'new_amount' => $newAmount,
+                    'total_balance' => $wallet->total_balance
+                ], 'Referral amount updated successfully');
+            }
+
+            return ResponseHelper::error('No changes detected', 400);
+        } catch (\Exception $e) {
+            return ResponseHelper::error('Failed to update referral amount: ' . $e->getMessage(), 500);
+        }
+    }
+
+    // Update specific referral transaction amount
+    public function updateReferralTransaction(Request $request, $transactionId)
+    {
+        try {
+            $request->validate([
+                'amount' => 'required|numeric|min:0',
+                'reason' => 'required|string|max:255'
+            ]);
+
+            $transaction = \App\Models\Transaction::findOrFail($transactionId);
+            
+            // Verify this is a referral transaction
+            if ($transaction->type !== 'referral') {
+                return ResponseHelper::error('This is not a referral transaction', 400);
+            }
+
+            $oldAmount = $transaction->amount;
+            $newAmount = $request->amount;
+
+            if ($oldAmount != $newAmount) {
+                $transaction->amount = $newAmount;
+                $transaction->save();
+
+                // Update user's wallet referral amount
+                $user = $transaction->user;
+                if ($user && $user->wallet) {
+                    $wallet = $user->wallet;
+                    $currentReferralAmount = $wallet->referral_amount ?? 0;
+                    $difference = $newAmount - $oldAmount;
+                    $wallet->referral_amount = max(0, $currentReferralAmount + $difference);
+                    $wallet->save();
+                }
+
+                // Log the change
+                \App\Models\AdminEdit::create([
+                    'admin_id' => Auth::id(),
+                    'user_id' => $transaction->user_id,
+                    'field_name' => 'referral_transaction_amount',
+                    'old_value' => $oldAmount,
+                    'new_value' => $newAmount,
+                    'edit_type' => 'referral_transaction_update',
+                    'reason' => $request->reason
+                ]);
+
+                return ResponseHelper::success([
+                    'transaction_id' => $transactionId,
+                    'old_amount' => $oldAmount,
+                    'new_amount' => $newAmount,
+                    'user_id' => $transaction->user_id
+                ], 'Referral transaction updated successfully');
+            }
+
+            return ResponseHelper::error('No changes detected', 400);
+        } catch (\Exception $e) {
+            return ResponseHelper::error('Failed to update referral transaction: ' . $e->getMessage(), 500);
+        }
+    }
+
+    // Get user's referral transactions with edit history
+    public function getUserReferralTransactions($userId)
+    {
+        try {
+            $user = User::findOrFail($userId);
+            
+            $referralTransactions = \App\Models\Transaction::where('user_id', $userId)
+                ->where('type', 'referral')
+                ->with(['user'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            // Get edit history for referral transactions
+            $editHistory = \App\Models\AdminEdit::where('user_id', $userId)
+                ->whereIn('edit_type', ['referral_amount_update', 'referral_transaction_update'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return ResponseHelper::success([
+                'user' => $user,
+                'referral_transactions' => $referralTransactions,
+                'edit_history' => $editHistory,
+                'wallet' => $user->wallet
+            ], 'Referral transactions retrieved successfully');
+        } catch (\Exception $e) {
+            return ResponseHelper::error('Failed to retrieve referral transactions: ' . $e->getMessage(), 500);
+        }
+    }
+
+    // Bulk update referral amounts for multiple users
+    public function bulkUpdateReferralAmounts(Request $request)
+    {
+        try {
+            $request->validate([
+                'user_ids' => 'required|array|min:1',
+                'user_ids.*' => 'integer|exists:users,id',
+                'referral_amount' => 'required|numeric|min:0',
+                'reason' => 'required|string|max:255'
+            ]);
+
+            $userIds = $request->user_ids;
+            $newAmount = $request->referral_amount;
+            $updatedCount = 0;
+            $errors = [];
+
+            DB::beginTransaction();
+            try {
+                foreach ($userIds as $userId) {
+                    $user = User::find($userId);
+                    if (!$user) {
+                        $errors[] = "User ID {$userId} not found";
+                        continue;
+                    }
+
+                    $wallet = $user->wallet;
+                    if (!$wallet) {
+                        $wallet = Wallet::create([
+                            'user_id' => $user->id,
+                            'status' => 'active'
+                        ]);
+                    }
+
+                    $oldAmount = $wallet->referral_amount ?? 0;
+                    
+                    if ($oldAmount != $newAmount) {
+                        $wallet->referral_amount = $newAmount;
+                        $wallet->save();
+
+                        // Log the change
+                        \App\Models\AdminEdit::create([
+                            'admin_id' => Auth::id(),
+                            'user_id' => $userId,
+                            'field_name' => 'referral_amount',
+                            'old_value' => $oldAmount,
+                            'new_value' => $newAmount,
+                            'edit_type' => 'bulk_referral_amount_update',
+                            'reason' => $request->reason
+                        ]);
+
+                        $updatedCount++;
+                    }
+                }
+
+                DB::commit();
+                return ResponseHelper::success([
+                    'updated_count' => $updatedCount,
+                    'errors' => $errors
+                ], "Bulk update completed. {$updatedCount} users updated successfully");
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return ResponseHelper::error('Failed to bulk update referral amounts: ' . $e->getMessage(), 500);
+        }
+    }
+
 }

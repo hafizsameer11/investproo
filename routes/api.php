@@ -117,6 +117,12 @@ Route::get('/admin/transactions/{id}', [UserController::class, 'getTransactionDe
 Route::put('/admin/transactions/{id}', [UserController::class, 'updateTransaction'])->middleware('auth:sanctum');
 Route::put('/admin/transactions/bulk-update', [UserController::class, 'bulkUpdateTransactions'])->middleware('auth:sanctum');
 
+// Admin referral amount management routes
+Route::get('/admin/users/{id}/referral-transactions', [UserController::class, 'getUserReferralTransactions'])->middleware('auth:sanctum');
+Route::put('/admin/users/{id}/referral-amount', [UserController::class, 'updateReferralAmount'])->middleware('auth:sanctum');
+Route::put('/admin/referral-transactions/{id}', [UserController::class, 'updateReferralTransaction'])->middleware('auth:sanctum');
+Route::put('/admin/referral-amounts/bulk-update', [UserController::class, 'bulkUpdateReferralAmounts'])->middleware('auth:sanctum');
+
 Route::get('/investment', [InvestmentController::class, 'investment'])->middleware('auth:sanctum');
 Route::post('/investment/create', [InvestmentController::class, 'createInvestment'])->middleware('auth:sanctum');
 Route::post('/investment/{id}/cancel', [InvestmentController::class, 'cancelInvestment'])->middleware('auth:sanctum');
