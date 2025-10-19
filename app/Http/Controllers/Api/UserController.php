@@ -540,13 +540,15 @@ class UserController extends Controller
             $request->validate([
                 'amount' => 'nullable|numeric|min:0',
                 'description' => 'nullable|string|max:500',
+                'status' => 'nullable|string|in:pending,completed,failed',
                 'reason' => 'nullable|string|max:255'
             ]);
 
             $transaction = \App\Models\Transaction::findOrFail($transactionId);
             $oldValues = [
                 'amount' => $transaction->amount,
-                'description' => $transaction->description
+                'description' => $transaction->description,
+                'status' => $transaction->status
             ];
 
             $changes = [];
@@ -569,6 +571,17 @@ class UserController extends Controller
                     $changes['description'] = [
                         'old' => $oldValues['description'],
                         'new' => $request->description
+                    ];
+                }
+            }
+
+            // Update status if provided
+            if ($request->has('status') && $request->status !== null) {
+                if ($transaction->status != $request->status) {
+                    $transaction->status = $request->status;
+                    $changes['status'] = [
+                        'old' => $oldValues['status'],
+                        'new' => $request->status
                     ];
                 }
             }
@@ -804,50 +817,6 @@ class UserController extends Controller
         }
     }
 
-    // Update transaction
-    public function updateTransaction(Request $request, $transactionId)
-    {
-        try {
-            $request->validate([
-                'amount' => 'required|numeric|min:0',
-                'status' => 'required|string|in:pending,completed,failed',
-                'description' => 'nullable|string|max:255',
-                'reason' => 'required|string|max:255'
-            ]);
-
-            $transaction = \App\Models\Transaction::findOrFail($transactionId);
-            $oldAmount = $transaction->amount;
-            $oldStatus = $transaction->status;
-
-            $transaction->update([
-                'amount' => $request->amount,
-                'status' => $request->status,
-                'description' => $request->description ?? $transaction->description
-            ]);
-
-            // Log the change
-            \App\Models\AdminEdit::create([
-                'admin_id' => Auth::id(),
-                'user_id' => $transaction->user_id,
-                'field_name' => 'transaction_amount',
-                'old_value' => $oldAmount,
-                'new_value' => $request->amount,
-                'edit_type' => 'transaction_update',
-                'reason' => $request->reason
-            ]);
-
-            return ResponseHelper::success([
-                'transaction_id' => $transactionId,
-                'old_amount' => $oldAmount,
-                'new_amount' => $request->amount,
-                'old_status' => $oldStatus,
-                'new_status' => $request->status
-            ], 'Transaction updated successfully');
-
-        } catch (\Exception $e) {
-            return ResponseHelper::error('Failed to update transaction: ' . $e->getMessage(), 500);
-        }
-    }
 
     // Delete transaction
     public function deleteTransaction(Request $request, $transactionId)
