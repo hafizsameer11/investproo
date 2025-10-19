@@ -108,7 +108,12 @@ public function sponsor()
     return $this->belongsTo(User::class, 'referral_code', 'user_code');
 }
 
-// Loyalty methods
+public function claimedAmounts()
+{
+    return $this->hasMany(\App\Models\ClaimedAmount::class);
+}
+
+// Loyalty methods (DISABLED - No bonus calculations)
 public function calculateLoyaltyDays()
 {
     if (!$this->first_investment_date) {
@@ -119,10 +124,6 @@ public function calculateLoyaltyDays()
     $endDate = $this->last_withdrawal_date ?: now();
     
     return $startDate->diffInDays($endDate);
-}
-public function claimedAmounts()
-{
-    return $this->hasMany(\App\Models\ClaimedAmount::class);
 }
 
 public function getNextLoyaltyTier()

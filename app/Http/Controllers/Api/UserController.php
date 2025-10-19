@@ -408,14 +408,18 @@ class UserController extends Controller
 
     public function userDetail($id)
     {
-        $user = User::with(['wallet', 'deposits', 'withdrawals', 'investments', 'claimedAmounts'])->find($id);
+        $user = User::with(['wallet', 'deposits', 'withdrawals', 'investments', 'claimedAmounts', 'transactions'])->find($id);
         // $referral = User::where('referral_code', $user->referral_id)->first();
         $referrals = $this->getUserReferrals($user, 5);
         if (!$user) {
             return ResponseHelper::error('User not found', 404);
         }
+        
+        // Get all transactions for the user
+        $transactions = $user->transactions()->orderBy('created_at', 'desc')->get();
+        
         // $user->load(['wallet', 'deposits', 'withdrawals', 'investments']);
-        return view('admin.pages.user-detail', compact('user', 'referrals'));
+        return view('admin.pages.user-detail', compact('user', 'referrals', 'transactions'));
     }
 
     // Update user wallet
@@ -797,6 +801,88 @@ class UserController extends Controller
             return ResponseHelper::error('No changes detected', 400);
         } catch (\Exception $e) {
             return ResponseHelper::error('Failed to update referral amount: ' . $e->getMessage(), 500);
+        }
+    }
+
+    // Update transaction
+    public function updateTransaction(Request $request, $transactionId)
+    {
+        try {
+            $request->validate([
+                'amount' => 'required|numeric|min:0',
+                'status' => 'required|string|in:pending,completed,failed',
+                'description' => 'nullable|string|max:255',
+                'reason' => 'required|string|max:255'
+            ]);
+
+            $transaction = \App\Models\Transaction::findOrFail($transactionId);
+            $oldAmount = $transaction->amount;
+            $oldStatus = $transaction->status;
+
+            $transaction->update([
+                'amount' => $request->amount,
+                'status' => $request->status,
+                'description' => $request->description ?? $transaction->description
+            ]);
+
+            // Log the change
+            \App\Models\AdminEdit::create([
+                'admin_id' => Auth::id(),
+                'user_id' => $transaction->user_id,
+                'field_name' => 'transaction_amount',
+                'old_value' => $oldAmount,
+                'new_value' => $request->amount,
+                'edit_type' => 'transaction_update',
+                'reason' => $request->reason
+            ]);
+
+            return ResponseHelper::success([
+                'transaction_id' => $transactionId,
+                'old_amount' => $oldAmount,
+                'new_amount' => $request->amount,
+                'old_status' => $oldStatus,
+                'new_status' => $request->status
+            ], 'Transaction updated successfully');
+
+        } catch (\Exception $e) {
+            return ResponseHelper::error('Failed to update transaction: ' . $e->getMessage(), 500);
+        }
+    }
+
+    // Delete transaction
+    public function deleteTransaction(Request $request, $transactionId)
+    {
+        try {
+            $request->validate([
+                'reason' => 'required|string|max:255'
+            ]);
+
+            $transaction = \App\Models\Transaction::findOrFail($transactionId);
+            $userId = $transaction->user_id;
+            $amount = $transaction->amount;
+            $type = $transaction->type;
+
+            // Log the deletion
+            \App\Models\AdminEdit::create([
+                'admin_id' => Auth::id(),
+                'user_id' => $userId,
+                'field_name' => 'transaction_deleted',
+                'old_value' => $amount,
+                'new_value' => 0,
+                'edit_type' => 'transaction_delete',
+                'reason' => $request->reason
+            ]);
+
+            $transaction->delete();
+
+            return ResponseHelper::success([
+                'transaction_id' => $transactionId,
+                'deleted_amount' => $amount,
+                'transaction_type' => $type
+            ], 'Transaction deleted successfully');
+
+        } catch (\Exception $e) {
+            return ResponseHelper::error('Failed to delete transaction: ' . $e->getMessage(), 500);
         }
     }
 

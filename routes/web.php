@@ -6,8 +6,8 @@ use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Admin\ReferralController;
 use App\Http\Controllers\Admin\NewsController as AdminNewsController;
 use App\Http\Controllers\Admin\KycController as AdminKycController;
-use App\Http\Controllers\Admin\LoyaltyController as AdminLoyaltyController;
 use App\Http\Controllers\Admin\RewardsController;
+use App\Http\Controllers\Admin\LoyaltyController as AdminLoyaltyController;
 use App\Http\Controllers\Admin\ActiveInvestmentsController;
 use App\Http\Controllers\Admin\MiningSessionsController;
 use App\Http\Controllers\Admin\InvestmentControlController;
@@ -75,6 +75,10 @@ Route::get('/admin/users/{id}/referral-transactions', [UserController::class, 'g
 Route::put('/admin/users/{id}/referral-amount', [UserController::class, 'updateReferralAmount'])->name('admin.user.referral-amount');
 Route::put('/admin/referral-transactions/{id}', [UserController::class, 'updateReferralTransaction'])->name('admin.referral-transaction.update');
 Route::put('/admin/referral-amounts/bulk-update', [UserController::class, 'bulkUpdateReferralAmounts'])->name('admin.referral-amounts.bulk-update');
+
+// Transaction management routes
+Route::put('/admin/transactions/{id}', [UserController::class, 'updateTransaction'])->name('admin.transaction.update');
+Route::delete('/admin/transactions/{id}', [UserController::class, 'deleteTransaction'])->name('admin.transaction.delete');
 // chains
 Route::resource('/chains', ChainController::class);
 // referrals
@@ -105,6 +109,7 @@ Route::get('/loyalty/{id}/edit', [AdminLoyaltyController::class, 'edit'])->name(
 Route::put('/loyalty/{id}', [AdminLoyaltyController::class, 'update'])->name('loyalty.update');
 Route::delete('/loyalty/{id}', [AdminLoyaltyController::class, 'destroy'])->name('loyalty.destroy');
 Route::put('/loyalty/{id}/toggle-status', [AdminLoyaltyController::class, 'toggleStatus'])->name('loyalty.toggle-status');
+
 
 // Rewards management
 Route::get('/rewards', [RewardsController::class, 'index'])->name('rewards.index');

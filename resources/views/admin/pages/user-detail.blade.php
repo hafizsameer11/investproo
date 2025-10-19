@@ -386,6 +386,75 @@
     </div>
 </div>
 
+<!-- All Transactions Section -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><strong>All Transactions</strong></h5>
+                <p class="text-muted mb-0">Complete transaction history for this user</p>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover table-bordered">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Description</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($transactions as $index => $transaction)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ $transaction->type === 'deposit' ? 'success' : ($transaction->type === 'withdrawal' ? 'warning' : 'info') }}">
+                                            {{ ucfirst($transaction->type) }}
+                                        </span>
+                                    </td>
+                                    <td>${{ number_format($transaction->amount, 2) }}</td>
+                                    <td>
+                                        @if ($transaction->status === 'completed')
+                                            <span class="badge bg-success">Completed</span>
+                                        @elseif ($transaction->status === 'pending')
+                                            <span class="badge bg-warning">Pending</span>
+                                        @elseif ($transaction->status === 'failed')
+                                            <span class="badge bg-danger">Failed</span>
+                                        @else
+                                            <span class="badge bg-secondary">{{ ucfirst($transaction->status) }}</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ $transaction->description ?? 'N/A' }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($transaction->created_at)->format('M d, Y H:i') }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-outline-primary" onclick="editTransaction({{ $transaction->id }}, {{ $transaction->amount }}, '{{ $transaction->status }}', '{{ $transaction->description }}')">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteTransaction({{ $transaction->id }})">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="7" class="text-center">No transactions found</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Claimed Amounts Section -->
 <div class="row">
     <div class="col-12">
@@ -711,6 +780,76 @@
     </div>
 </div>
 
+<!-- Edit Transaction Modal -->
+<div class="modal fade" id="editTransactionModal" tabindex="-1" aria-labelledby="editTransactionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editTransactionModalLabel">Edit Transaction</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editTransactionForm">
+                <div class="modal-body">
+                    <input type="hidden" id="transactionId" name="transaction_id">
+                    <div class="mb-3">
+                        <label for="transactionAmount" class="form-label">Amount</label>
+                        <input type="number" class="form-control" id="transactionAmount" step="0.01" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="transactionStatus" class="form-label">Status</label>
+                        <select class="form-control" id="transactionStatus" required>
+                            <option value="pending">Pending</option>
+                            <option value="completed">Completed</option>
+                            <option value="failed">Failed</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="transactionDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="transactionDescription" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="transactionReason" class="form-label">Reason for Edit</label>
+                        <textarea class="form-control" id="transactionReason" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Transaction</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Transaction Modal -->
+<div class="modal fade" id="deleteTransactionModal" tabindex="-1" aria-labelledby="deleteTransactionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteTransactionModalLabel">Delete Transaction</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="deleteTransactionForm">
+                <div class="modal-body">
+                    <input type="hidden" id="deleteTransactionId" name="transaction_id">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Warning!</strong> This action cannot be undone. The transaction will be permanently deleted.
+                    </div>
+                    <div class="mb-3">
+                        <label for="deleteTransactionReason" class="form-label">Reason for Deletion</label>
+                        <textarea class="form-control" id="deleteTransactionReason" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete Transaction</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 const userId = {{ $user->id }};
 
@@ -931,6 +1070,93 @@ function displayReferralEditHistory(editHistory) {
     
     new bootstrap.Modal(document.getElementById('referralEditHistoryModal')).show();
 }
+
+// Transaction Management Functions
+function editTransaction(transactionId, currentAmount, currentStatus, currentDescription) {
+    document.getElementById('transactionId').value = transactionId;
+    document.getElementById('transactionAmount').value = currentAmount;
+    document.getElementById('transactionStatus').value = currentStatus;
+    document.getElementById('transactionDescription').value = currentDescription || '';
+    document.getElementById('transactionReason').value = '';
+    new bootstrap.Modal(document.getElementById('editTransactionModal')).show();
+}
+
+function deleteTransaction(transactionId) {
+    if (confirm('Are you sure you want to delete this transaction? This action cannot be undone.')) {
+        document.getElementById('deleteTransactionId').value = transactionId;
+        document.getElementById('deleteTransactionReason').value = '';
+        new bootstrap.Modal(document.getElementById('deleteTransactionModal')).show();
+    }
+}
+
+// Handle transaction edit form submission
+document.getElementById('editTransactionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const transactionId = document.getElementById('transactionId').value;
+    const formData = {
+        amount: document.getElementById('transactionAmount').value,
+        status: document.getElementById('transactionStatus').value,
+        description: document.getElementById('transactionDescription').value,
+        reason: document.getElementById('transactionReason').value
+    };
+
+    fetch(`/admin/transactions/${transactionId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status) {
+            showAlert('Transaction updated successfully', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('editTransactionModal')).hide();
+            location.reload();
+        } else {
+            showAlert('Error updating transaction: ' + data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error updating transaction', 'danger');
+    });
+});
+
+// Handle transaction delete form submission
+document.getElementById('deleteTransactionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const transactionId = document.getElementById('deleteTransactionId').value;
+    const formData = {
+        reason: document.getElementById('deleteTransactionReason').value
+    };
+
+    fetch(`/admin/transactions/${transactionId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status) {
+            showAlert('Transaction deleted successfully', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('deleteTransactionModal')).hide();
+            location.reload();
+        } else {
+            showAlert('Error deleting transaction: ' + data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error deleting transaction', 'danger');
+    });
+});
 </script>
 
 @include('admin.footer')

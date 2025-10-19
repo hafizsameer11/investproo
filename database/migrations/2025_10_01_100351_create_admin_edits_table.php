@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('field_name');
             $table->text('old_value')->nullable();
             $table->text('new_value');
-            $table->string('edit_type'); // 'mining_reward', 'referral_bonus', 'loyalty_bonus'
+            $table->string('edit_type'); // 'mining_reward', 'referral_bonus'
             $table->text('reason')->nullable();
             $table->timestamps();
             

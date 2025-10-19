@@ -33,5 +33,3 @@ class Loyalty extends Model
         return $query->orderBy('days_required', 'asc');
     }
 }
-
-

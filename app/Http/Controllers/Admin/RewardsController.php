@@ -104,44 +104,8 @@ class RewardsController extends Controller
 
     public function updateLoyaltyBonus(Request $request, $userId)
     {
-        $request->validate([
-            'loyalty_bonus' => 'required|numeric|min:0',
-            'reason' => 'nullable|string|max:255'
-        ]);
-
-        $user = User::findOrFail($userId);
-        $wallet = $user->wallet;
-        
-        if (!$wallet) {
-            return redirect()->back()->with('error', 'User wallet not found');
-        }
-
-        $oldValue = $wallet->bonus_amount ?? 0;
-        $newValue = $request->loyalty_bonus;
-
-        DB::beginTransaction();
-        try {
-            // Update wallet bonus amount
-            $wallet->bonus_amount = $newValue;
-            $wallet->save();
-
-            // Log admin edit
-            AdminEdit::create([
-                'admin_id' => Auth::id(),
-                'user_id' => $userId,
-                'field_name' => 'bonus_amount',
-                'old_value' => $oldValue,
-                'new_value' => $newValue,
-                'edit_type' => 'loyalty_bonus',
-                'reason' => $request->reason
-            ]);
-
-            DB::commit();
-            return redirect()->back()->with('success', 'Loyalty bonus updated successfully');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->with('error', 'Failed to update loyalty bonus: ' . $e->getMessage());
-        }
+        // DISABLED - Loyalty bonus functionality is disabled
+        return redirect()->back()->with('error', 'Loyalty bonus functionality is currently disabled');
     }
 
     public function getEditHistory($userId)

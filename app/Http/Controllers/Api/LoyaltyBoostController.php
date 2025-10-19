@@ -47,8 +47,9 @@ class LoyaltyBoostController extends Controller
             // Check if user has been invested for at least 30 days
             $has30DaysInvestment = $daysInvested >= 30;
             
-            // Calculate loyalty boost (15% if invested for 30+ days)
-            $loyaltyBoostPercentage = $has30DaysInvestment ? 15 : 0;
+            // DISABLED: Calculate loyalty boost (15% if invested for 30+ days)
+            // $loyaltyBoostPercentage = $has30DaysInvestment ? 15 : 0;
+            $loyaltyBoostPercentage = 0; // DISABLED - No loyalty boost
             
             // Calculate penalty (50% of profit if withdrawing before completion)
             $penaltyAmount = 0;
@@ -61,13 +62,14 @@ class LoyaltyBoostController extends Controller
                 $penaltyAmount = $currentProfit * 0.5;
             }
             
-            // Check if loyalty bonus is available (30+ days invested and not withdrawn recently)
-            $lastWithdrawal = \App\Models\Withdrawal::where('user_id', $userId)
-                ->whereIn('status', ['active', 'pending'])
-                ->where('created_at', '>=', $currentDate->subDays(30))
-                ->first();
+            // DISABLED: Check if loyalty bonus is available (30+ days invested and not withdrawn recently)
+            // $lastWithdrawal = \App\Models\Withdrawal::where('user_id', $userId)
+            //     ->whereIn('status', ['active', 'pending'])
+            //     ->where('created_at', '>=', $currentDate->subDays(30))
+            //     ->first();
             
-            $loyaltyBonusAvailable = $has30DaysInvestment && !$lastWithdrawal;
+            // $loyaltyBonusAvailable = $has30DaysInvestment && !$lastWithdrawal;
+            $loyaltyBonusAvailable = false; // DISABLED - No loyalty bonus available
             
             return ResponseHelper::success([
                 'has_active_investment' => true,
